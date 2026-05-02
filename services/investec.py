@@ -1,7 +1,11 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 import httpx
 import os
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class InvestecClient:
@@ -15,10 +19,10 @@ class InvestecClient:
         self._sandbox = os.environ.get("INVESTEC_SANDBOX", "true").lower() == "true"
         self._base = self._SANDBOX_BASE if self._sandbox else self._PROD_BASE
         self._token: str | None = None
-        self._token_expires_at: datetime = datetime.utcnow()
+        self._token_expires_at: datetime = _utcnow()
 
     def _ensure_token(self) -> None:
-        if self._token and datetime.utcnow() < self._token_expires_at:
+        if self._token and _utcnow() < self._token_expires_at:
             return
         url = f"{self._base}/identity/v2/oauth2/token"
         resp = httpx.post(
@@ -30,7 +34,7 @@ class InvestecClient:
         resp.raise_for_status()
         data = resp.json()
         self._token = data["access_token"]
-        self._token_expires_at = datetime.utcnow() + timedelta(seconds=data["expires_in"] - 60)
+        self._token_expires_at = _utcnow() + timedelta(seconds=data["expires_in"] - 60)
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         self._ensure_token()
