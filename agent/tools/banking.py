@@ -1,4 +1,4 @@
-from services.investec import InvestecClient
+from services.investec_client import InvestecClient
 
 _investec = InvestecClient()
 

@@ -1,6 +1,6 @@
 from models.report import Report
 from repositories.reports import ReportRepository
-from services.email import EmailService
+from services.email_service import EmailService
 
 _repo = ReportRepository()
 _email = EmailService()
