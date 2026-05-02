@@ -123,8 +123,9 @@ def test_get_beneficiary_categories_returns_list(client):
 def test_beneficiary_category_has_required_fields(client):
     categories = client.get_beneficiary_categories()
     if categories:
-        assert "id" in categories[0]
-        assert "name" in categories[0]
+        # Sandbox returns PascalCase fields
+        assert "CategoryId" in categories[0]
+        assert "CategoryName" in categories[0]
 
 
 # ── Documents ─────────────────────────────────────────────────────────────────

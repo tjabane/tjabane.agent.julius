@@ -91,7 +91,8 @@ class InvestecClient:
         return self._post(f"/za/pb/v1/accounts/{account_id}/paymultiple", {"paymentList": payments}).get("TransferResponses", [])
 
     def get_documents(self, account_id: str, from_date: str, to_date: str) -> list[dict]:
-        return self._get(f"/za/pb/v1/accounts/{account_id}/documents", {"fromDate": from_date, "toDate": to_date}).get("data", [])
+        result = self._get(f"/za/pb/v1/accounts/{account_id}/documents", {"fromDate": from_date, "toDate": to_date})
+        return result if isinstance(result, list) else result.get("data", [])
 
     def get_document(self, account_id: str, document_type: str, document_date: str) -> Any:
         return self._get(f"/za/pb/v1/accounts/{account_id}/document/{document_type}/{document_date}")
