@@ -1,0 +1,20 @@
+from azure.communication.email import EmailClient
+import os
+
+
+class EmailService:
+    def __init__(self):
+        self._client = EmailClient.from_connection_string(
+            os.environ["AZURE_COMMUNICATION_CONNECTION_STRING"]
+        )
+        self._sender = os.environ["EMAIL_SENDER_ADDRESS"]
+        self._recipient = os.environ["EMAIL_RECIPIENT_ADDRESS"]
+
+    def send_report(self, subject: str, body: str) -> None:
+        message = {
+            "senderAddress": self._sender,
+            "recipients": {"to": [{"address": self._recipient}]},
+            "content": {"subject": subject, "plainText": body},
+        }
+        poller = self._client.begin_send(message)
+        poller.result()

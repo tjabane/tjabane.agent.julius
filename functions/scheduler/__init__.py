@@ -1,0 +1,29 @@
+from datetime import datetime, timedelta
+import logging
+import azure.functions as func
+from repositories.schedules import ScheduleRepository
+from models.schedule import Frequency
+from agent.agent import run_scheduled
+
+_repo = ScheduleRepository()
+
+
+def main(timer: func.TimerRequest) -> None:
+    due = _repo.list_due()
+    if not due:
+        return
+
+    for schedule in due:
+        try:
+            run_scheduled(schedule_id=schedule.id, query=schedule.query)
+            schedule.next_run = _next_run(schedule.frequency)
+            _repo.save(schedule)
+        except Exception as e:
+            logging.error("Scheduled run failed for %s: %s", schedule.id, e)
+
+
+def _next_run(frequency: Frequency) -> datetime:
+    base = datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0)
+    if frequency == Frequency.DAILY:
+        return base + timedelta(days=1)
+    return base + timedelta(weeks=1)

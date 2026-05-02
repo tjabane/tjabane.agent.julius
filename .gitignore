@@ -1,0 +1,18 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Azure Functions local settings (contains secrets)
+local.settings.json
+
+# Environment files
+.env
+
+.python_packages

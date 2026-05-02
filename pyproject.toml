@@ -1,0 +1,22 @@
+[project]
+name = "tjabane-agent-julius"
+version = "0.1.0"
+description = "Personal Investec banking agent accessible via WhatsApp"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "anthropic>=0.40.0",
+    "azure-functions>=1.21.0",
+    "azure-cosmos>=4.9.0",
+    "azure-communication-email>=1.0.0",
+    "azure-keyvault-secrets>=4.8.0",
+    "azure-identity>=1.19.0",
+    "twilio>=9.4.0",
+    "httpx>=0.28.0",
+    "pydantic>=2.10.0",
+    "python-dotenv>=1.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
