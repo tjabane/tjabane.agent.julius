@@ -8,16 +8,18 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-class InvestecClient:
-    _SANDBOX_BASE = "https://openapisandbox.investec.com"
-    _PROD_BASE = "https://openapi.investec.com"
+_SANDBOX_URL = "https://openapisandbox.investec.com"
+_PROD_URL = "https://openapi.investec.com"
 
+
+class InvestecClient:
     def __init__(self):
         self._client_id = os.environ["INVESTEC_CLIENT_ID"]
         self._client_secret = os.environ["INVESTEC_CLIENT_SECRET"]
         self._api_key = os.environ["INVESTEC_API_KEY"]
-        self._sandbox = os.environ.get("INVESTEC_SANDBOX", "true").lower() == "true"
-        self._base = self._SANDBOX_BASE if self._sandbox else self._PROD_BASE
+        sandbox = os.environ.get("INVESTEC_SANDBOX", "true").lower() == "true"
+        default_url = _SANDBOX_URL if sandbox else _PROD_URL
+        self._base = os.environ.get("INVESTEC_BASE_URL", default_url).rstrip("/")
         self._token: str | None = None
         self._token_expires_at: datetime = _utcnow()
 
