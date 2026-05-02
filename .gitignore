@@ -14,5 +14,5 @@ local.settings.json
 
 # Environment files
 .env
-
+.vscode/
 .python_packages
