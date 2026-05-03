@@ -1,5 +1,10 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from models.skill import Skill
 from repositories.skills import SkillRepository
+
+if TYPE_CHECKING:
+    from agent.tools.deps import ToolDeps
 
 _repo: SkillRepository | None = None
 
@@ -44,8 +49,8 @@ DEFINITIONS = [
 ]
 
 
-def handle(tool_name: str, inputs: dict) -> str:
-    repo = _get_repo()
+def handle(tool_name: str, inputs: dict, deps: ToolDeps | None = None) -> str:
+    repo = (deps.skill_repo if deps and deps.skill_repo else None) or _get_repo()
 
     if tool_name == "save_skill":
         skill = Skill(name=inputs["name"], description=inputs["description"], content=inputs["content"])

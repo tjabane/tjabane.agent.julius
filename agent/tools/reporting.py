@@ -1,6 +1,11 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from models.report import Report
 from repositories.reports import ReportRepository
 from services.email_service import EmailService
+
+if TYPE_CHECKING:
+    from agent.tools.deps import ToolDeps
 
 _repo: ReportRepository | None = None
 _email: EmailService | None = None
@@ -37,12 +42,15 @@ DEFINITIONS = [
 ]
 
 
-def handle(tool_name: str, inputs: dict) -> str:
+def handle(tool_name: str, inputs: dict, deps: ToolDeps | None = None) -> str:
+    repo = (deps.report_repo if deps and deps.report_repo else None) or _get_repo()
+    email = (deps.email if deps and deps.email else None) or _get_email()
+
     report = Report(
         query=inputs["subject"],
         content=inputs["body"],
         schedule_id=inputs.get("schedule_id"),
     )
-    _get_repo().save(report)
-    _get_email().send_report(subject=inputs["subject"], body=inputs["body"])
+    repo.save(report)
+    email.send_report(subject=inputs["subject"], body=inputs["body"])
     return f"Report emailed and saved with ID {report.id}."

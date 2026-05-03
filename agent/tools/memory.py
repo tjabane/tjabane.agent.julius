@@ -1,5 +1,10 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from models.memory import Memory, MemoryType
 from repositories.memory import MemoryRepository
+
+if TYPE_CHECKING:
+    from agent.tools.deps import ToolDeps
 
 _repo: MemoryRepository | None = None
 
@@ -42,8 +47,8 @@ DEFINITIONS = [
 ]
 
 
-def handle(tool_name: str, inputs: dict) -> str:
-    repo = _get_repo()
+def handle(tool_name: str, inputs: dict, deps: ToolDeps | None = None) -> str:
+    repo = (deps.memory_repo if deps and deps.memory_repo else None) or _get_repo()
 
     if tool_name == "save_memory":
         memory = Memory(type=MemoryType(inputs["type"]), content=inputs["content"])

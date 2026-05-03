@@ -1,6 +1,11 @@
+from __future__ import annotations
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
 from models.schedule import Schedule, Frequency
 from repositories.schedules import ScheduleRepository
+
+if TYPE_CHECKING:
+    from agent.tools.deps import ToolDeps
 
 _repo: ScheduleRepository | None = None
 
@@ -39,9 +44,9 @@ def _next_run_default(frequency: Frequency) -> datetime:
     return tomorrow
 
 
-def handle(tool_name: str, inputs: dict) -> str:
+def handle(tool_name: str, inputs: dict, deps: ToolDeps | None = None) -> str:
+    repo = (deps.schedule_repo if deps and deps.schedule_repo else None) or _get_repo()
     action = inputs["action"]
-    repo = _get_repo()
 
     if action == "list":
         schedules = repo.list_all()

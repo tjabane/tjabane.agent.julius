@@ -1,4 +1,9 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from . import banking, scheduling, reporting, memory, skills
+
+if TYPE_CHECKING:
+    from agent.tools.deps import ToolDeps
 
 _RAW_DEFINITIONS = (
     banking.DEFINITIONS
@@ -8,7 +13,6 @@ _RAW_DEFINITIONS = (
     + skills.DEFINITIONS
 )
 
-# Convert from internal format to OpenAI function-calling format
 ALL_DEFINITIONS = [
     {
         "type": "function",
@@ -30,8 +34,8 @@ _HANDLERS = {
 }
 
 
-def dispatch(tool_name: str, inputs: dict) -> str:
+def dispatch(tool_name: str, inputs: dict, deps: ToolDeps | None = None) -> str:
     handler = _HANDLERS.get(tool_name)
     if not handler:
         raise ValueError(f"No handler for tool: {tool_name}")
-    return handler(tool_name, inputs)
+    return handler(tool_name, inputs, deps)
