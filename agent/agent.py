@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 import os
 from pathlib import Path
@@ -5,6 +6,7 @@ from openai import OpenAI
 from models.session import Message
 from repositories.sessions import SessionRepository
 from agent.tools import ALL_DEFINITIONS, dispatch
+from agent.tools.deps import ToolDeps
 
 _SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / "system.md").read_text()
 _MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")
@@ -27,8 +29,17 @@ def _get_sessions() -> SessionRepository:
     return _sessions
 
 
-def run(whatsapp_number: str, user_message: str) -> str:
-    sessions = _get_sessions()
+def run(
+    whatsapp_number: str,
+    user_message: str,
+    *,
+    client: OpenAI | None = None,
+    sessions: SessionRepository | None = None,
+    tool_deps: ToolDeps | None = None,
+) -> str:
+    client = client or _get_client()
+    sessions = sessions or _get_sessions()
+
     session = sessions.get_or_create(whatsapp_number)
     session.messages.append(Message(role="user", content=user_message))
 
@@ -38,7 +49,7 @@ def run(whatsapp_number: str, user_message: str) -> str:
     ]
 
     while True:
-        response = _get_client().chat.completions.create(
+        response = client.chat.completions.create(
             model=_MODEL,
             tools=ALL_DEFINITIONS,
             messages=messages,
@@ -56,7 +67,7 @@ def run(whatsapp_number: str, user_message: str) -> str:
             messages.append(choice.message)
             for tool_call in choice.message.tool_calls:
                 inputs = json.loads(tool_call.function.arguments)
-                result = _call_tool(tool_call.function.name, inputs)
+                result = _call_tool(tool_call.function.name, inputs, tool_deps)
                 messages.append({
                     "role": "tool",
                     "tool_call_id": tool_call.id,
@@ -64,14 +75,22 @@ def run(whatsapp_number: str, user_message: str) -> str:
                 })
 
 
-def run_scheduled(schedule_id: str, query: str) -> str:
+def run_scheduled(
+    schedule_id: str,
+    query: str,
+    *,
+    client: OpenAI | None = None,
+    tool_deps: ToolDeps | None = None,
+) -> str:
+    client = client or _get_client()
+
     messages = [
         {"role": "system", "content": _SYSTEM_PROMPT},
         {"role": "user", "content": query},
     ]
 
     while True:
-        response = _get_client().chat.completions.create(
+        response = client.chat.completions.create(
             model=_MODEL,
             tools=ALL_DEFINITIONS,
             messages=messages,
@@ -88,7 +107,7 @@ def run_scheduled(schedule_id: str, query: str) -> str:
                 inputs = json.loads(tool_call.function.arguments)
                 if tool_call.function.name == "send_email":
                     inputs["schedule_id"] = schedule_id
-                result = _call_tool(tool_call.function.name, inputs)
+                result = _call_tool(tool_call.function.name, inputs, tool_deps)
                 messages.append({
                     "role": "tool",
                     "tool_call_id": tool_call.id,
@@ -96,8 +115,8 @@ def run_scheduled(schedule_id: str, query: str) -> str:
                 })
 
 
-def _call_tool(name: str, inputs: dict) -> str:
+def _call_tool(name: str, inputs: dict, deps: ToolDeps | None = None) -> str:
     try:
-        return dispatch(name, inputs)
+        return dispatch(name, inputs, deps)
     except Exception as e:
         return f"Error: {e}"

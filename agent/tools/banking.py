@@ -1,4 +1,9 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from services.investec_client import InvestecClient
+
+if TYPE_CHECKING:
+    from agent.tools.deps import ToolDeps
 
 _investec: InvestecClient | None = None
 
@@ -8,6 +13,7 @@ def _get_investec() -> InvestecClient:
     if _investec is None:
         _investec = InvestecClient()
     return _investec
+
 
 DEFINITIONS = [
     {
@@ -110,45 +116,39 @@ DEFINITIONS = [
 ]
 
 
-def handle(tool_name: str, inputs: dict) -> str:
-    investec = _get_investec()
+def handle(tool_name: str, inputs: dict, deps: ToolDeps | None = None) -> str:
+    investec = (deps.investec if deps and deps.investec else None) or _get_investec()
 
     if tool_name == "get_accounts":
-        accounts = investec.get_accounts()
-        return str(accounts)
+        return str(investec.get_accounts())
 
     if tool_name == "get_balance":
-        balance = investec.get_balance(inputs["account_id"])
-        return str(balance)
+        return str(investec.get_balance(inputs["account_id"]))
 
     if tool_name == "get_transactions":
-        txns = investec.get_transactions(
+        return str(investec.get_transactions(
             inputs["account_id"],
             from_date=inputs.get("from_date"),
             to_date=inputs.get("to_date"),
             transaction_type=inputs.get("transaction_type"),
             include_pending=inputs.get("include_pending", False),
-        )
-        return str(txns)
+        ))
 
     if tool_name == "transfer_funds":
-        result = investec.transfer_funds(inputs["account_id"], inputs["transfers"])
-        return str(result)
+        return str(investec.transfer_funds(inputs["account_id"], inputs["transfers"]))
 
     if tool_name == "get_beneficiaries":
-        beneficiaries = investec.get_beneficiaries()
-        categories = investec.get_beneficiary_categories()
-        return str({"beneficiaries": beneficiaries, "categories": categories})
+        return str({
+            "beneficiaries": investec.get_beneficiaries(),
+            "categories": investec.get_beneficiary_categories(),
+        })
 
     if tool_name == "pay_beneficiary":
-        result = investec.pay_beneficiaries(inputs["account_id"], inputs["payments"])
-        return str(result)
+        return str(investec.pay_beneficiaries(inputs["account_id"], inputs["payments"]))
 
     if tool_name == "get_documents":
         if "document_type" in inputs:
-            doc = investec.get_document(inputs["account_id"], inputs["document_type"], inputs["document_date"])
-            return str(doc)
-        docs = investec.get_documents(inputs["account_id"], inputs["from_date"], inputs["to_date"])
-        return str(docs)
+            return str(investec.get_document(inputs["account_id"], inputs["document_type"], inputs["document_date"]))
+        return str(investec.get_documents(inputs["account_id"], inputs["from_date"], inputs["to_date"]))
 
     raise ValueError(f"Unknown banking tool: {tool_name}")
