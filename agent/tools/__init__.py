@@ -1,16 +1,14 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from . import banking, scheduling, reporting, memory, skills
+from agent.tools import banking, knowledge, reporting
 
 if TYPE_CHECKING:
     from agent.tools.deps import ToolDeps
 
 _RAW_DEFINITIONS = (
     banking.DEFINITIONS
-    + scheduling.DEFINITIONS
+    + knowledge.DEFINITIONS
     + reporting.DEFINITIONS
-    + memory.DEFINITIONS
-    + skills.DEFINITIONS
 )
 
 ALL_DEFINITIONS = [
@@ -27,10 +25,8 @@ ALL_DEFINITIONS = [
 
 _HANDLERS = {
     **{t["name"]: banking.handle for t in banking.DEFINITIONS},
-    **{t["name"]: scheduling.handle for t in scheduling.DEFINITIONS},
+    **{t["name"]: knowledge.handle for t in knowledge.DEFINITIONS},
     **{t["name"]: reporting.handle for t in reporting.DEFINITIONS},
-    **{t["name"]: memory.handle for t in memory.DEFINITIONS},
-    **{t["name"]: skills.handle for t in skills.DEFINITIONS},
 }
 
 
