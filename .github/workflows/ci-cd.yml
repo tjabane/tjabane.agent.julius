@@ -6,7 +6,7 @@ on:
     branches: [master]
 
 jobs:
-  test:
+  test-unit:
     name: Unit tests
     runs-on: ubuntu-latest
 
@@ -20,12 +20,51 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Run unit tests
-        run: uv run pytest tests/ -m "not integration" -v
+      - name: Run unit tests with coverage
+        run: uv run pytest tests/ -m "not integration" -v --cov --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  test-integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || github.event_name == 'pull_request'
+
+    env:
+      INVESTEC_CLIENT_ID: ${{ secrets.INVESTEC_CLIENT_ID }}
+      INVESTEC_CLIENT_SECRET: ${{ secrets.INVESTEC_CLIENT_SECRET }}
+      INVESTEC_API_KEY: ${{ secrets.INVESTEC_API_KEY }}
+      INVESTEC_SANDBOX: "true"
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      COSMOS_CONNECTION_STRING: ${{ secrets.COSMOS_CONNECTION_STRING }}
+      COSMOS_DATABASE: julius
+      TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+      TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+      TWILIO_WHATSAPP_NUMBER: ${{ secrets.TWILIO_WHATSAPP_NUMBER }}
+      AZURE_COMMUNICATION_CONNECTION_STRING: ${{ secrets.AZURE_COMMUNICATION_CONNECTION_STRING }}
+      EMAIL_SENDER_ADDRESS: ${{ secrets.EMAIL_SENDER_ADDRESS }}
+      EMAIL_RECIPIENT_ADDRESS: ${{ secrets.EMAIL_RECIPIENT_ADDRESS }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run integration tests
+        run: uv run pytest tests/ -m integration -v
 
   deploy-dev:
     name: Deploy to dev
-    needs: test
+    needs: [test-unit, test-integration]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: dev
