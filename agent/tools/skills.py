@@ -1,7 +1,15 @@
 from models.skill import Skill
 from repositories.skills import SkillRepository
 
-_repo = SkillRepository()
+_repo: SkillRepository | None = None
+
+
+def _get_repo() -> SkillRepository:
+    global _repo
+    if _repo is None:
+        _repo = SkillRepository()
+    return _repo
+
 
 DEFINITIONS = [
     {
@@ -37,19 +45,21 @@ DEFINITIONS = [
 
 
 def handle(tool_name: str, inputs: dict) -> str:
+    repo = _get_repo()
+
     if tool_name == "save_skill":
         skill = Skill(name=inputs["name"], description=inputs["description"], content=inputs["content"])
-        _repo.save(skill)
+        repo.save(skill)
         return f"Skill '{inputs['name']}' saved."
 
     if tool_name == "load_skill":
-        skill = _repo.get_by_name(inputs["name"])
+        skill = repo.get_by_name(inputs["name"])
         if not skill:
             return f"No skill found with name '{inputs['name']}'."
         return f"# Skill: {skill.name}\n\n{skill.content}"
 
     if tool_name == "list_skills":
-        skills = _repo.list_all()
+        skills = repo.list_all()
         if not skills:
             return "No skills saved yet."
         return "\n".join(f"- **{s.name}**: {s.description}" for s in skills)

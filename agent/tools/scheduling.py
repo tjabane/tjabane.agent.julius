@@ -2,7 +2,15 @@ from datetime import datetime, timedelta
 from models.schedule import Schedule, Frequency
 from repositories.schedules import ScheduleRepository
 
-_repo = ScheduleRepository()
+_repo: ScheduleRepository | None = None
+
+
+def _get_repo() -> ScheduleRepository:
+    global _repo
+    if _repo is None:
+        _repo = ScheduleRepository()
+    return _repo
+
 
 DEFINITIONS = [
     {
@@ -33,9 +41,10 @@ def _next_run_default(frequency: Frequency) -> datetime:
 
 def handle(tool_name: str, inputs: dict) -> str:
     action = inputs["action"]
+    repo = _get_repo()
 
     if action == "list":
-        schedules = _repo.list_all()
+        schedules = repo.list_all()
         if not schedules:
             return "No schedules configured."
         return "\n".join(
@@ -47,11 +56,11 @@ def handle(tool_name: str, inputs: dict) -> str:
         frequency = Frequency(inputs["frequency"])
         next_run = datetime.fromisoformat(inputs["next_run"]) if inputs.get("next_run") else _next_run_default(frequency)
         schedule = Schedule(query=inputs["query"], frequency=frequency, next_run=next_run)
-        _repo.save(schedule)
+        repo.save(schedule)
         return f"Schedule created with ID {schedule.id}. Runs {frequency.value}, next at {next_run.isoformat()}."
 
     if action == "update":
-        schedule = _repo.get(inputs["schedule_id"])
+        schedule = repo.get(inputs["schedule_id"])
         if not schedule:
             return f"Schedule {inputs['schedule_id']} not found."
         if "query" in inputs:
@@ -60,19 +69,19 @@ def handle(tool_name: str, inputs: dict) -> str:
             schedule.frequency = Frequency(inputs["frequency"])
         if "next_run" in inputs:
             schedule.next_run = datetime.fromisoformat(inputs["next_run"])
-        _repo.save(schedule)
+        repo.save(schedule)
         return f"Schedule {schedule.id} updated."
 
     if action in ("enable", "disable"):
-        schedule = _repo.get(inputs["schedule_id"])
+        schedule = repo.get(inputs["schedule_id"])
         if not schedule:
             return f"Schedule {inputs['schedule_id']} not found."
         schedule.enabled = action == "enable"
-        _repo.save(schedule)
+        repo.save(schedule)
         return f"Schedule {schedule.id} {action}d."
 
     if action == "delete":
-        _repo.delete(inputs["schedule_id"])
+        repo.delete(inputs["schedule_id"])
         return f"Schedule {inputs['schedule_id']} deleted."
 
     raise ValueError(f"Unknown schedule action: {action}")

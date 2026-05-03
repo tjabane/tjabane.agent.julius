@@ -1,7 +1,15 @@
 from models.memory import Memory, MemoryType
 from repositories.memory import MemoryRepository
 
-_repo = MemoryRepository()
+_repo: MemoryRepository | None = None
+
+
+def _get_repo() -> MemoryRepository:
+    global _repo
+    if _repo is None:
+        _repo = MemoryRepository()
+    return _repo
+
 
 DEFINITIONS = [
     {
@@ -35,13 +43,15 @@ DEFINITIONS = [
 
 
 def handle(tool_name: str, inputs: dict) -> str:
+    repo = _get_repo()
+
     if tool_name == "save_memory":
         memory = Memory(type=MemoryType(inputs["type"]), content=inputs["content"])
-        _repo.save(memory)
+        repo.save(memory)
         return f"Memory saved: {inputs['content']}"
 
     if tool_name == "search_memory":
-        results = _repo.search(inputs["keywords"])
+        results = repo.search(inputs["keywords"])
         if not results:
             return "No relevant memories found."
         return "\n".join(f"[{m.type.value}] {m.content}" for m in results)

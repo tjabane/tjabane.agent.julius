@@ -1,6 +1,13 @@
 from services.investec_client import InvestecClient
 
-_investec = InvestecClient()
+_investec: InvestecClient | None = None
+
+
+def _get_investec() -> InvestecClient:
+    global _investec
+    if _investec is None:
+        _investec = InvestecClient()
+    return _investec
 
 DEFINITIONS = [
     {
@@ -104,16 +111,18 @@ DEFINITIONS = [
 
 
 def handle(tool_name: str, inputs: dict) -> str:
+    investec = _get_investec()
+
     if tool_name == "get_accounts":
-        accounts = _investec.get_accounts()
+        accounts = investec.get_accounts()
         return str(accounts)
 
     if tool_name == "get_balance":
-        balance = _investec.get_balance(inputs["account_id"])
+        balance = investec.get_balance(inputs["account_id"])
         return str(balance)
 
     if tool_name == "get_transactions":
-        txns = _investec.get_transactions(
+        txns = investec.get_transactions(
             inputs["account_id"],
             from_date=inputs.get("from_date"),
             to_date=inputs.get("to_date"),
@@ -123,23 +132,23 @@ def handle(tool_name: str, inputs: dict) -> str:
         return str(txns)
 
     if tool_name == "transfer_funds":
-        result = _investec.transfer_funds(inputs["account_id"], inputs["transfers"])
+        result = investec.transfer_funds(inputs["account_id"], inputs["transfers"])
         return str(result)
 
     if tool_name == "get_beneficiaries":
-        beneficiaries = _investec.get_beneficiaries()
-        categories = _investec.get_beneficiary_categories()
+        beneficiaries = investec.get_beneficiaries()
+        categories = investec.get_beneficiary_categories()
         return str({"beneficiaries": beneficiaries, "categories": categories})
 
     if tool_name == "pay_beneficiary":
-        result = _investec.pay_beneficiaries(inputs["account_id"], inputs["payments"])
+        result = investec.pay_beneficiaries(inputs["account_id"], inputs["payments"])
         return str(result)
 
     if tool_name == "get_documents":
         if "document_type" in inputs:
-            doc = _investec.get_document(inputs["account_id"], inputs["document_type"], inputs["document_date"])
+            doc = investec.get_document(inputs["account_id"], inputs["document_type"], inputs["document_date"])
             return str(doc)
-        docs = _investec.get_documents(inputs["account_id"], inputs["from_date"], inputs["to_date"])
+        docs = investec.get_documents(inputs["account_id"], inputs["from_date"], inputs["to_date"])
         return str(docs)
 
     raise ValueError(f"Unknown banking tool: {tool_name}")

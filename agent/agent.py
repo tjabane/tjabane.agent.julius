@@ -6,14 +6,30 @@ from models.session import Message
 from repositories.sessions import SessionRepository
 from agent.tools import ALL_DEFINITIONS, dispatch
 
-_client = OpenAI()
-_sessions = SessionRepository()
 _SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / "system.md").read_text()
 _MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")
 
+_client: OpenAI | None = None
+_sessions: SessionRepository | None = None
+
+
+def _get_client() -> OpenAI:
+    global _client
+    if _client is None:
+        _client = OpenAI()
+    return _client
+
+
+def _get_sessions() -> SessionRepository:
+    global _sessions
+    if _sessions is None:
+        _sessions = SessionRepository()
+    return _sessions
+
 
 def run(whatsapp_number: str, user_message: str) -> str:
-    session = _sessions.get_or_create(whatsapp_number)
+    sessions = _get_sessions()
+    session = sessions.get_or_create(whatsapp_number)
     session.messages.append(Message(role="user", content=user_message))
 
     messages = [
@@ -22,7 +38,7 @@ def run(whatsapp_number: str, user_message: str) -> str:
     ]
 
     while True:
-        response = _client.chat.completions.create(
+        response = _get_client().chat.completions.create(
             model=_MODEL,
             tools=ALL_DEFINITIONS,
             messages=messages,
@@ -33,7 +49,7 @@ def run(whatsapp_number: str, user_message: str) -> str:
         if choice.finish_reason == "stop":
             reply = choice.message.content or ""
             session.messages.append(Message(role="assistant", content=reply))
-            _sessions.save(session)
+            sessions.save(session)
             return reply
 
         if choice.finish_reason == "tool_calls":
@@ -55,7 +71,7 @@ def run_scheduled(schedule_id: str, query: str) -> str:
     ]
 
     while True:
-        response = _client.chat.completions.create(
+        response = _get_client().chat.completions.create(
             model=_MODEL,
             tools=ALL_DEFINITIONS,
             messages=messages,

@@ -64,7 +64,7 @@ Write-Host "    acs-connection-string     set" -ForegroundColor Green
 
 # Prompt for secrets that must be provided manually
 $manualSecrets = @(
-    @{ Name = "anthropic-api-key";       Prompt = "Anthropic API key" }
+    @{ Name = "openai-api-key";           Prompt = "OpenAI API key" }
     @{ Name = "investec-client-id";      Prompt = "Investec Client ID" }
     @{ Name = "investec-client-secret";  Prompt = "Investec Client Secret" }
     @{ Name = "investec-api-key";        Prompt = "Investec API key (x-api-key)" }
