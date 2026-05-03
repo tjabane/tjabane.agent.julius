@@ -6,7 +6,7 @@ param functionAppPrincipalId string = ''
 // Key Vault Secrets Officer — allows the deploying user to set secrets post-deploy
 var secretsOfficerRoleId = 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7'
 // Key Vault Secrets User — allows the function app to read secrets at runtime
-var secretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e0'
+var secretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: name

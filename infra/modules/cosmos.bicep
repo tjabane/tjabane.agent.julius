@@ -60,4 +60,3 @@ resource container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/container
 ]
 
 output accountName string = cosmosAccount.name
-output connectionString string = cosmosAccount.listConnectionStrings().connectionStrings[0].connectionString

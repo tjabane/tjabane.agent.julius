@@ -10,12 +10,19 @@ param investecSandbox bool = true
 @description('Object ID of the deploying user — grants Key Vault Secrets Officer for secret population')
 param deployingUserObjectId string = ''
 
-var suffix = uniqueString(resourceGroup().id)
+var suffix = take(uniqueString(resourceGroup().id), 8)
+var safeAppName = replace(appName, '-', '')
+
+// Storage: max 24, lowercase alphanumeric only
+var storageAccountName = 'st${take(safeAppName, 14)}${suffix}'
+
+// Key Vault: max 24, alphanumeric + hyphens, no consecutive hyphens
+var keyVaultName = 'kv-${take(safeAppName, 11)}-${suffix}'
 
 module storage 'modules/storage.bicep' = {
   name: 'storage'
   params: {
-    name: 'st${appName}${suffix}'
+    name: storageAccountName
     location: location
   }
 }
@@ -48,7 +55,7 @@ module communication 'modules/communication.bicep' = {
 module keyvault 'modules/keyvault.bicep' = {
   name: 'keyvault'
   params: {
-    name: 'kv-${appName}-${suffix}'
+    name: keyVaultName
     location: location
     deployingUserObjectId: deployingUserObjectId
   }
@@ -79,6 +86,6 @@ module keyvaultRoleAssignment 'modules/keyvault.bicep' = {
 
 output functionAppUrl string = functionApp.outputs.url
 output keyVaultName string = keyvault.outputs.name
-output cosmosConnectionStringSecretCmd string = 'az keyvault secret set --vault-name ${keyvault.outputs.name} --name cosmos-connection-string --value "<from cosmos module>"'
 output cosmosAccountName string = cosmos.outputs.accountName
 output acsName string = communication.outputs.acsName
+output functionAppName string = functionApp.outputs.name
