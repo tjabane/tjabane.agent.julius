@@ -4,14 +4,53 @@ Julius is a personal Investec Private Banking agent accessible over WhatsApp. It
 
 ## Architecture overview
 
+![Architecture diagram](docs/architecture.png)
+
+```mermaid
+flowchart LR
+    User(["User\n(WhatsApp)"])
+    Twilio["Twilio\nWhatsApp Gateway"]
+    OpenAI["OpenAI\nGPT-4o"]
+    Investec["Investec\nPrivate Banking API"]
+    ACS["Azure Communication\nServices (Email)"]
+    KV["Azure\nKey Vault"]
+
+    subgraph AF["Azure Functions"]
+        Webhook["webhook\nHTTP POST /webhook"]
+        Sched["scheduler\nTimer every 5 min"]
+    end
+
+    subgraph DB["Azure CosmosDB — julius"]
+        Sessions[("sessions")]
+        Schedules[("schedules")]
+        Memories[("memories")]
+        Skills[("skills")]
+        Reports[("reports")]
+    end
+
+    User -->|WhatsApp| Twilio
+    Twilio -->|POST /webhook| Webhook
+    Webhook -.->|reply| Twilio
+    Twilio -.->|WhatsApp| User
+
+    Webhook -->|run()| OpenAI
+    Sched -->|run_scheduled()| OpenAI
+
+    OpenAI -->|banking tools| Investec
+    OpenAI -->|send_email| ACS
+    OpenAI <-->|sessions| Sessions
+    OpenAI <-->|memories| Memories
+    OpenAI <-->|skills| Skills
+    OpenAI <-->|schedules| Schedules
+    OpenAI -->|write| Reports
+
+    Sched <-->|list_due / save| Schedules
+
+    AF -. "Key Vault refs" .-> KV
 ```
-WhatsApp → Twilio → Azure Functions (webhook) → OpenAI GPT-4o → Investec API
-                                                      ↑
-                                              Azure CosmosDB
-                                        (sessions, schedules, memory)
-                                                      ↓
-                                       Azure Communication Services (email)
-```
+
+> A generated PNG of the diagram is at [`docs/architecture.png`](docs/architecture.png).  
+> To regenerate it: `uv run python docs/architecture.py`
 
 Two Azure Functions handle all traffic:
 
