@@ -6,7 +6,7 @@ load_dotenv()
 
 
 @pytest.fixture(autouse=True)
-def investec_env(monkeypatch, request):
+def dummy_env(monkeypatch, request):
     """Provide dummy env vars for unit tests. Integration tests use real .env values."""
     if request.node.get_closest_marker("integration"):
         return
@@ -14,3 +14,12 @@ def investec_env(monkeypatch, request):
     monkeypatch.setenv("INVESTEC_CLIENT_SECRET", "test-client-secret")
     monkeypatch.setenv("INVESTEC_API_KEY", "test-api-key")
     monkeypatch.setenv("INVESTEC_SANDBOX", "true")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("COSMOS_CONNECTION_STRING", "AccountEndpoint=https://fake.documents.azure.com:443/;AccountKey=ZmFrZWtleWZha2U=;")
+    monkeypatch.setenv("COSMOS_DATABASE", "julius")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "ACtest")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "testtoken")
+    monkeypatch.setenv("TWILIO_WHATSAPP_NUMBER", "+15005550006")
+    monkeypatch.setenv("AZURE_COMMUNICATION_CONNECTION_STRING", "endpoint=https://fake.communication.azure.com;accesskey=ZmFrZQ==")
+    monkeypatch.setenv("EMAIL_SENDER_ADDRESS", "sender@test.com")
+    monkeypatch.setenv("EMAIL_RECIPIENT_ADDRESS", "recipient@test.com")
