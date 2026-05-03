@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from models.memory import Memory, MemoryType
-from repositories.memory import MemoryRepository
+from models.knowledge import Memory, MemoryType
+from repositories.knowledge import MemoryRepository
 
 if TYPE_CHECKING:
     from agent.tools.deps import ToolDeps

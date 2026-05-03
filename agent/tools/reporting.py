@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from models.report import Report
-from repositories.reports import ReportRepository
+from models.reporting import Report
+from repositories.reporting import ReportRepository
 from services.email_service import EmailService
 
 if TYPE_CHECKING:

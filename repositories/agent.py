@@ -1,5 +1,5 @@
 from datetime import datetime
-from models.session import Session
+from models.agent import Session
 from .base import BaseRepository
 
 

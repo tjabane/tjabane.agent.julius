@@ -1,8 +1,8 @@
 from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
-from models.schedule import Schedule, Frequency
-from repositories.schedules import ScheduleRepository
+from models.reporting import Schedule, Frequency
+from repositories.reporting import ScheduleRepository
 
 if TYPE_CHECKING:
     from agent.tools.deps import ToolDeps

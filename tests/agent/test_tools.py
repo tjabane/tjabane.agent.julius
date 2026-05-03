@@ -3,9 +3,8 @@ from unittest.mock import MagicMock
 import pytest
 from agent.tools import dispatch
 from agent.tools.deps import ToolDeps
-from models.memory import Memory, MemoryType
-from models.schedule import Schedule, Frequency
-from models.skill import Skill
+from models.knowledge import Memory, MemoryType, Skill
+from models.reporting import Schedule, Frequency
 
 
 # ── dispatch ──────────────────────────────────────────────────────────────────

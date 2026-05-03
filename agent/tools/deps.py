@@ -5,10 +5,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from services.investec_client import InvestecClient
     from services.email_service import EmailService
-    from repositories.schedules import ScheduleRepository
-    from repositories.reports import ReportRepository
-    from repositories.memory import MemoryRepository
-    from repositories.skills import SkillRepository
+    from repositories.reporting import ScheduleRepository, ReportRepository
+    from repositories.knowledge import MemoryRepository, SkillRepository
 
 
 @dataclass

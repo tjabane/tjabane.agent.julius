@@ -4,8 +4,8 @@ from datetime import datetime, timedelta, timezone
 import azure.functions as func
 
 from agent.agent import run, run_scheduled
-from models.schedule import Frequency
-from repositories.schedules import ScheduleRepository
+from models.reporting import Frequency
+from repositories.reporting import ScheduleRepository
 from services.twilio_client import TwilioClient
 
 app = func.FunctionApp()

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from models.skill import Skill
-from repositories.skills import SkillRepository
+from models.knowledge import Skill
+from repositories.knowledge import SkillRepository
 
 if TYPE_CHECKING:
     from agent.tools.deps import ToolDeps
