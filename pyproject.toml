@@ -5,7 +5,7 @@ description = "Personal Investec banking agent accessible via WhatsApp"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "anthropic>=0.40.0",
+    "openai>=1.75.0",
     "azure-functions>=1.21.0",
     "azure-cosmos>=4.9.0",
     "azure-communication-email>=1.0.0",

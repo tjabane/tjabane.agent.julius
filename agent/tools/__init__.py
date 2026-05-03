@@ -1,12 +1,25 @@
 from . import banking, scheduling, reporting, memory, skills
 
-ALL_DEFINITIONS = (
+_RAW_DEFINITIONS = (
     banking.DEFINITIONS
     + scheduling.DEFINITIONS
     + reporting.DEFINITIONS
     + memory.DEFINITIONS
     + skills.DEFINITIONS
 )
+
+# Convert from internal format to OpenAI function-calling format
+ALL_DEFINITIONS = [
+    {
+        "type": "function",
+        "function": {
+            "name": t["name"],
+            "description": t["description"],
+            "parameters": t.get("input_schema", {"type": "object", "properties": {}, "required": []}),
+        },
+    }
+    for t in _RAW_DEFINITIONS
+]
 
 _HANDLERS = {
     **{t["name"]: banking.handle for t in banking.DEFINITIONS},

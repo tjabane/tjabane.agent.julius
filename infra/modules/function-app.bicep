@@ -71,8 +71,8 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         }
         // Key Vault references — secrets must be populated post-deploy
         {
-          name: 'ANTHROPIC_API_KEY'
-          value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=anthropic-api-key)'
+          name: 'OPENAI_API_KEY'
+          value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=openai-api-key)'
         }
         {
           name: 'INVESTEC_CLIENT_ID'
