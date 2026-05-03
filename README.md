@@ -4,8 +4,6 @@ Julius is a personal Investec Private Banking agent accessible over WhatsApp. It
 
 ## Architecture overview
 
-![Architecture diagram](docs/architecture.png)
-
 ```mermaid
 flowchart LR
     User(["User\n(WhatsApp)"])
@@ -48,9 +46,6 @@ flowchart LR
 
     AF -. "Key Vault refs" .-> KV
 ```
-
-> A generated PNG of the diagram is at [`docs/architecture.png`](docs/architecture.png).  
-> To regenerate it: `uv run python docs/architecture.py`
 
 Two Azure Functions handle all traffic:
 
