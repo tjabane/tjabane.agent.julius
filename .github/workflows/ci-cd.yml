@@ -62,6 +62,27 @@ jobs:
       - name: Run integration tests
         run: uv run pytest tests/ -m integration -v
 
+  codeql:
+    name: CodeQL analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:python"
+
   security-scan:
     name: Security scan
     runs-on: ubuntu-latest
@@ -105,7 +126,7 @@ jobs:
 
   deploy-dev:
     name: Deploy to dev
-    needs: [test-unit, test-integration, sonarcloud, security-scan]
+    needs: [test-unit, test-integration, sonarcloud, security-scan, codeql]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: dev
