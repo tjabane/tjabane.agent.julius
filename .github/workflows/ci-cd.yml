@@ -62,6 +62,26 @@ jobs:
       - name: Run integration tests
         run: uv run pytest tests/ -m integration -v
 
+  security-scan:
+    name: Security scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Bandit (code security)
+        run: uvx bandit -r agent functions models repositories services function_app.py -ll
+
+      - name: pip-audit (dependency vulnerabilities)
+        run: uvx pip-audit
+
   sonarcloud:
     name: SonarCloud scan
     needs: test-unit
@@ -85,7 +105,7 @@ jobs:
 
   deploy-dev:
     name: Deploy to dev
-    needs: [test-unit, test-integration, sonarcloud]
+    needs: [test-unit, test-integration, sonarcloud, security-scan]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: dev
