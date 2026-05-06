@@ -26,10 +26,12 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
 markers = ["integration: live sandbox tests (require credentials)"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["agent", "functions", "models", "repositories", "services"]
+sources = ["src"]
+packages = ["src/agent", "src/functions", "src/models", "src/repositories", "src/services"]
 
 [build-system]
 requires = ["hatchling"]

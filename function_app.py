@@ -1,5 +1,9 @@
 import logging
+import os
+import sys
 from datetime import datetime, timedelta, timezone
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src"))
 
 import azure.functions as func
 
