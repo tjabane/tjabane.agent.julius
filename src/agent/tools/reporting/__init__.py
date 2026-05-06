@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 from julius_domain.models.reporting import Schedule, Frequency, Report
 from julius_domain.repositories.reporting import ScheduleRepository, ReportRepository
-from julius_services.email_service import EmailService
+from julius_services.communication.email_service import EmailService
 
 if TYPE_CHECKING:
     from agent.tools.deps import ToolDeps

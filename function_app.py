@@ -10,7 +10,7 @@ import azure.functions as func
 from agent.agent import run, run_scheduled
 from julius_domain.models.reporting import Frequency
 from julius_domain.repositories.reporting import ScheduleRepository
-from julius_services.twilio_client import TwilioClient
+from julius_services.communication.twilio_client import TwilioClient
 
 app = func.FunctionApp()
 

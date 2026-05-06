@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch, call
 import pytest
-from julius_services.twilio_client import TwilioClient
+from julius_services.communication.twilio_client import TwilioClient
 
 
 @pytest.fixture(autouse=True)
@@ -13,12 +13,12 @@ def twilio_env(monkeypatch):
 # ── Initialisation ────────────────────────────────────────────────────────────
 
 class TestInit:
-    @patch("julius_services.twilio_client.Client")
+    @patch("julius_services.communication.twilio_client.Client")
     def test_creates_twilio_client_with_credentials(self, mock_client_cls):
         TwilioClient()
         mock_client_cls.assert_called_once_with("test-account-sid", "test-auth-token")
 
-    @patch("julius_services.twilio_client.Client")
+    @patch("julius_services.communication.twilio_client.Client")
     def test_stores_from_number(self, mock_client_cls):
         client = TwilioClient()
         assert client._from_number == "+27821234567"
@@ -27,7 +27,7 @@ class TestInit:
 # ── send_message ──────────────────────────────────────────────────────────────
 
 class TestSendMessage:
-    @patch("julius_services.twilio_client.Client")
+    @patch("julius_services.communication.twilio_client.Client")
     def test_sends_message_with_whatsapp_prefix(self, mock_client_cls):
         mock_twilio = MagicMock()
         mock_client_cls.return_value = mock_twilio
@@ -41,7 +41,7 @@ class TestSendMessage:
             body="Hello!",
         )
 
-    @patch("julius_services.twilio_client.Client")
+    @patch("julius_services.communication.twilio_client.Client")
     def test_from_number_has_whatsapp_prefix(self, mock_client_cls):
         mock_twilio = MagicMock()
         mock_client_cls.return_value = mock_twilio
@@ -52,7 +52,7 @@ class TestSendMessage:
         call_kwargs = mock_twilio.messages.create.call_args.kwargs
         assert call_kwargs["from_"].startswith("whatsapp:")
 
-    @patch("julius_services.twilio_client.Client")
+    @patch("julius_services.communication.twilio_client.Client")
     def test_to_number_has_whatsapp_prefix(self, mock_client_cls):
         mock_twilio = MagicMock()
         mock_client_cls.return_value = mock_twilio
@@ -63,7 +63,7 @@ class TestSendMessage:
         call_kwargs = mock_twilio.messages.create.call_args.kwargs
         assert call_kwargs["to"].startswith("whatsapp:")
 
-    @patch("julius_services.twilio_client.Client")
+    @patch("julius_services.communication.twilio_client.Client")
     def test_sends_correct_body(self, mock_client_cls):
         mock_twilio = MagicMock()
         mock_client_cls.return_value = mock_twilio

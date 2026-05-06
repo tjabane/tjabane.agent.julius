@@ -6,7 +6,7 @@ Skip automatically if INVESTEC_CLIENT_ID is not set.
 """
 import os
 import pytest
-from julius_services.investec_client import InvestecClient
+from julius_services.finance.investec_client import InvestecClient
 
 pytestmark = pytest.mark.integration
 

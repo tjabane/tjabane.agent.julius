@@ -1,3 +1,3 @@
-from .investec_client import InvestecClient
-from .twilio_client import TwilioClient
-from .email_service import EmailService
+from .finance.investec_client import InvestecClient
+from .communication.twilio_client import TwilioClient
+from .communication.email_service import EmailService

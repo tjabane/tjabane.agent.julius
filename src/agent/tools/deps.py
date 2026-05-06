@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from julius_services.investec_client import InvestecClient
-    from julius_services.email_service import EmailService
+    from julius_services.finance.investec_client import InvestecClient
+    from julius_services.communication.email_service import EmailService
     from julius_domain.repositories.reporting import ScheduleRepository, ReportRepository
     from julius_domain.repositories.knowledge import MemoryRepository, SkillRepository
 

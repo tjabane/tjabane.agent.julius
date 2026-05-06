@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from julius_services.investec_client import InvestecClient
+from julius_services.finance.investec_client import InvestecClient
 
 if TYPE_CHECKING:
     from agent.tools.deps import ToolDeps
