@@ -25,11 +25,13 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests/julius_unit_tests", "tests/julius_integration_tests"]
+pythonpath = ["src"]
 markers = ["integration: live sandbox tests (require credentials)"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["agent", "functions", "models", "repositories", "services"]
+sources = ["src"]
+packages = ["src/julius_application", "src/julius_domain", "src/julius_services"]
 
 [build-system]
 requires = ["hatchling"]

@@ -21,7 +21,7 @@ jobs:
         run: uv sync
 
       - name: Run unit tests with coverage
-        run: uv run pytest tests/ -m "not integration" -v --cov --cov-report=xml --cov-report=term-missing --cov-fail-under=80
+        run: uv run pytest tests/julius_unit_tests/ -v --cov --cov-report=xml --cov-report=term-missing --cov-fail-under=80
 
       - name: Upload coverage report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -60,7 +60,7 @@ jobs:
         run: uv sync
 
       - name: Run integration tests
-        run: uv run pytest tests/ -m integration -v
+        run: uv run pytest tests/julius_integration_tests/ -v
 
   codeql:
     name: CodeQL analysis
@@ -98,7 +98,7 @@ jobs:
         run: uv sync
 
       - name: Bandit (code security)
-        run: uvx bandit -r agent functions models repositories services function_app.py -ll
+        run: uvx bandit -r src/ function_app.py -ll
 
       - name: pip-audit (dependency vulnerabilities)
         run: uvx pip-audit
