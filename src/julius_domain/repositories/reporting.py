@@ -40,6 +40,6 @@ class ReportRepository(BaseRepository):
 
     def list_recent(self, limit: int = 10) -> list[Report]:
         rows = self._query(
-            f"SELECT TOP {limit} * FROM c ORDER BY c.created_at DESC"
+            f"SELECT TOP {limit} * FROM c ORDER BY c.created_at DESC"  # nosec B608 - limit is a typed int, Cosmos DB does not support parameterized TOP
         )
         return [Report(**r) for r in rows]

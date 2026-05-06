@@ -20,7 +20,7 @@ class MemoryRepository(BaseRepository):
             f"CONTAINS(LOWER(c.content), LOWER(@kw{i}))" for i, _ in enumerate(keywords)
         )
         parameters = [{"name": f"@kw{i}", "value": kw} for i, kw in enumerate(keywords)]
-        rows = self._query(f"SELECT * FROM c WHERE {conditions}", parameters)
+        rows = self._query(f"SELECT * FROM c WHERE {conditions}", parameters)  # nosec B608 - conditions contains only parameterized placeholder names, values are passed separately
         results = [Memory(**r) for r in rows]
         now = datetime.utcnow()
         for m in results:
