@@ -4,7 +4,7 @@ def _utcnow():
     return datetime.now(timezone.utc)
 from unittest.mock import MagicMock, patch
 import pytest
-from services.investec_client import InvestecClient
+from julius_services.investec_client import InvestecClient
 
 ACCOUNT_ID = "172878438332791809002"
 SANDBOX_BASE = "https://openapisandbox.investec.com"

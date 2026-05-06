@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 import pytest
-from services.email_service import EmailService
+from julius_services.email_service import EmailService
 
 
 @pytest.fixture(autouse=True)
@@ -13,19 +13,19 @@ def email_env(monkeypatch):
 # ── Initialisation ────────────────────────────────────────────────────────────
 
 class TestInit:
-    @patch("services.email_service.EmailClient")
+    @patch("julius_services.email_service.EmailClient")
     def test_creates_client_from_connection_string(self, mock_client_cls):
         EmailService()
         mock_client_cls.from_connection_string.assert_called_once_with(
             "endpoint=https://test.communication.azure.com/;accesskey=dGVzdA=="
         )
 
-    @patch("services.email_service.EmailClient")
+    @patch("julius_services.email_service.EmailClient")
     def test_stores_sender_address(self, mock_client_cls):
         service = EmailService()
         assert service._sender == "DoNotReply@test.azurecomm.net"
 
-    @patch("services.email_service.EmailClient")
+    @patch("julius_services.email_service.EmailClient")
     def test_stores_recipient_address(self, mock_client_cls):
         service = EmailService()
         assert service._recipient == "user@example.com"
@@ -34,7 +34,7 @@ class TestInit:
 # ── send_report ───────────────────────────────────────────────────────────────
 
 class TestSendReport:
-    @patch("services.email_service.EmailClient")
+    @patch("julius_services.email_service.EmailClient")
     def test_calls_begin_send(self, mock_client_cls):
         mock_acs = MagicMock()
         mock_client_cls.from_connection_string.return_value = mock_acs
@@ -44,7 +44,7 @@ class TestSendReport:
 
         mock_acs.begin_send.assert_called_once()
 
-    @patch("services.email_service.EmailClient")
+    @patch("julius_services.email_service.EmailClient")
     def test_message_has_correct_sender(self, mock_client_cls):
         mock_acs = MagicMock()
         mock_client_cls.from_connection_string.return_value = mock_acs
@@ -55,7 +55,7 @@ class TestSendReport:
         message = mock_acs.begin_send.call_args.args[0]
         assert message["senderAddress"] == "DoNotReply@test.azurecomm.net"
 
-    @patch("services.email_service.EmailClient")
+    @patch("julius_services.email_service.EmailClient")
     def test_message_has_correct_recipient(self, mock_client_cls):
         mock_acs = MagicMock()
         mock_client_cls.from_connection_string.return_value = mock_acs
@@ -66,7 +66,7 @@ class TestSendReport:
         message = mock_acs.begin_send.call_args.args[0]
         assert message["recipients"]["to"][0]["address"] == "user@example.com"
 
-    @patch("services.email_service.EmailClient")
+    @patch("julius_services.email_service.EmailClient")
     def test_message_has_correct_subject(self, mock_client_cls):
         mock_acs = MagicMock()
         mock_client_cls.from_connection_string.return_value = mock_acs
@@ -77,7 +77,7 @@ class TestSendReport:
         message = mock_acs.begin_send.call_args.args[0]
         assert message["content"]["subject"] == "Weekly Report"
 
-    @patch("services.email_service.EmailClient")
+    @patch("julius_services.email_service.EmailClient")
     def test_message_has_correct_body(self, mock_client_cls):
         mock_acs = MagicMock()
         mock_client_cls.from_connection_string.return_value = mock_acs
@@ -88,7 +88,7 @@ class TestSendReport:
         message = mock_acs.begin_send.call_args.args[0]
         assert message["content"]["plainText"] == "Here is your weekly summary."
 
-    @patch("services.email_service.EmailClient")
+    @patch("julius_services.email_service.EmailClient")
     def test_waits_for_send_to_complete(self, mock_client_cls):
         mock_acs = MagicMock()
         mock_client_cls.from_connection_string.return_value = mock_acs

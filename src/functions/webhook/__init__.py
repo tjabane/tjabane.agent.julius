@@ -1,5 +1,5 @@
 import azure.functions as func
-from services.twilio_client import TwilioClient
+from julius_services.twilio_client import TwilioClient
 from agent.agent import run
 
 _twilio = TwilioClient()
