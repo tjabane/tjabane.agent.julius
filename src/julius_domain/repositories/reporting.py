@@ -1,7 +1,6 @@
 from datetime import datetime
-from models.reporting import Schedule, Report
+from julius_domain.models.reporting import Schedule, Report
 from .base import BaseRepository
-
 
 class ScheduleRepository(BaseRepository):
     def __init__(self):
@@ -30,7 +29,6 @@ class ScheduleRepository(BaseRepository):
             [{"name": "@now", "value": now}],
         )
         return [Schedule(**r) for r in rows]
-
 
 class ReportRepository(BaseRepository):
     def __init__(self):

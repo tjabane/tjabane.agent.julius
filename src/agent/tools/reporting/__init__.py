@@ -1,8 +1,8 @@
 from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
-from models.reporting import Schedule, Frequency, Report
-from repositories.reporting import ScheduleRepository, ReportRepository
+from julius_domain.models.reporting import Schedule, Frequency, Report
+from julius_domain.repositories.reporting import ScheduleRepository, ReportRepository
 from services.email_service import EmailService
 
 if TYPE_CHECKING:

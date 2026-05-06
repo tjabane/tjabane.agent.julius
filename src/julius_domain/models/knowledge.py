@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from pydantic import BaseModel, Field
 import uuid
@@ -12,13 +12,13 @@ class Memory(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     type: MemoryType
     content: str
-    created_at: datetime = Field(default_factory=datetime.datetime.timezone.utc)
-    last_referenced: datetime = Field(default_factory=datetime.datetime.timezone.utc)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_referenced: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Skill(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     description: str
     content: str
-    created_at: datetime = Field(default_factory=datetime.datetime.timezone.utc)
-    updated_at: datetime = Field(default_factory=datetime.datetime.timezone.utc)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

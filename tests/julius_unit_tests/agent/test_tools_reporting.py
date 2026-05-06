@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock
 from agent.tools import dispatch
 from agent.tools.deps import ToolDeps
-from models.reporting import Schedule, Frequency
+from julius_domain.models.reporting import Schedule, Frequency
 
 
 class TestSchedulingTools:

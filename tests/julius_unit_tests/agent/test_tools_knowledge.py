@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 from agent.tools import dispatch
 from agent.tools.deps import ToolDeps
-from models.knowledge import Memory, MemoryType, Skill
+from julius_domain.models.knowledge import Memory, MemoryType, Skill
 
 
 class TestMemoryTools:

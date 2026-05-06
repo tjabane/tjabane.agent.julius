@@ -3,8 +3,8 @@ import json
 import os
 from pathlib import Path
 from openai import OpenAI
-from models.agent import Message
-from repositories.agent import SessionRepository
+from julius_domain.models.agent import Message
+from julius_domain.repositories.agent import SessionRepository
 from agent.tools import ALL_DEFINITIONS, dispatch
 from agent.tools.deps import ToolDeps
 

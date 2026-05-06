@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from models.knowledge import Memory, MemoryType, Skill
-from repositories.knowledge import MemoryRepository, SkillRepository
+from julius_domain.models.knowledge import Memory, MemoryType, Skill
+from julius_domain.repositories.knowledge import MemoryRepository, SkillRepository
 
 if TYPE_CHECKING:
     from agent.tools.deps import ToolDeps

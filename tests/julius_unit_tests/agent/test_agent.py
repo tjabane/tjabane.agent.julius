@@ -1,7 +1,7 @@
 import json
 from unittest.mock import MagicMock
 import pytest
-from models.agent import Session
+from julius_domain.models.agent import Session
 from agent.agent import run, run_scheduled
 from agent.tools.deps import ToolDeps
 

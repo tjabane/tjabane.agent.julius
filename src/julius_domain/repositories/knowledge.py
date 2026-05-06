@@ -1,5 +1,5 @@
 from datetime import datetime
-from models.knowledge import Memory, Skill
+from julius_domain.models.knowledge import Memory, Skill
 from .base import BaseRepository
 
 

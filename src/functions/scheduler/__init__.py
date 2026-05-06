@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 import logging
 import azure.functions as func
-from repositories.schedules import ScheduleRepository
-from models.schedule import Frequency
+from julius_domain.repositories.schedules import ScheduleRepository
+from julius_domain.models.schedule import Frequency
 from agent.agent import run_scheduled
 
 _repo = ScheduleRepository()
