@@ -6,7 +6,7 @@ from julius_domain.repositories.reporting import ScheduleRepository, ReportRepos
 from julius_services.communication.email_service import EmailService
 
 if TYPE_CHECKING:
-    from agent.tools.deps import ToolDeps
+    from julius_application.agent.tools.deps import ToolDeps
 
 _schedule_repo: ScheduleRepository | None = None
 _report_repo: ReportRepository | None = None

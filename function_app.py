@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src
 
 import azure.functions as func
 
-from agent.agent import run, run_scheduled
+from julius_application.agent.agent import run, run_scheduled
 from julius_domain.models.reporting import Frequency
 from julius_domain.repositories.reporting import ScheduleRepository
 from julius_services.communication.twilio_client import TwilioClient

@@ -3,7 +3,7 @@ import logging
 import azure.functions as func
 from julius_domain.repositories.schedules import ScheduleRepository
 from julius_domain.models.schedule import Frequency
-from agent.agent import run_scheduled
+from julius_application.agent.agent import run_scheduled
 
 _repo = ScheduleRepository()
 

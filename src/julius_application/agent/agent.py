@@ -5,8 +5,8 @@ from pathlib import Path
 from openai import OpenAI
 from julius_domain.models.agent import Message
 from julius_domain.repositories.agent import SessionRepository
-from agent.tools import ALL_DEFINITIONS, dispatch
-from agent.tools.deps import ToolDeps
+from julius_application.agent.tools import ALL_DEFINITIONS, dispatch
+from julius_application.agent.tools.deps import ToolDeps
 
 _SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / "system.md").read_text()
 _MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")

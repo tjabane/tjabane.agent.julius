@@ -1,9 +1,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from agent.tools import banking, knowledge, reporting
+from julius_application.agent.tools import banking, knowledge, reporting
 
 if TYPE_CHECKING:
-    from agent.tools.deps import ToolDeps
+    from julius_application.agent.tools.deps import ToolDeps
 
 _RAW_DEFINITIONS = (
     banking.DEFINITIONS
