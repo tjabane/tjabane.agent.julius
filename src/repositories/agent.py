@@ -2,7 +2,6 @@ from datetime import datetime
 from models.agent import Session
 from .base import BaseRepository
 
-
 class SessionRepository(BaseRepository):
     def __init__(self):
         super().__init__("sessions")
