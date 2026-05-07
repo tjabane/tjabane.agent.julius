@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import sys
@@ -8,6 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src
 import azure.functions as func
 
 from julius_application.agent.agent import run, run_scheduled
+from julius_application.health import run_all as run_health_checks
 from julius_domain.models.reporting import Frequency
 from julius_domain.repositories.reporting import ScheduleRepository
 from julius_services.communication.twilio_client import TwilioClient
@@ -30,6 +32,26 @@ def _get_schedules() -> ScheduleRepository:
     if _schedules is None:
         _schedules = ScheduleRepository()
     return _schedules
+
+
+@app.route(route="ping", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def ping(req: func.HttpRequest) -> func.HttpResponse:
+    return func.HttpResponse(
+        body=json.dumps({"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}),
+        status_code=200,
+        mimetype="application/json",
+    )
+
+
+@app.route(route="health", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def health(req: func.HttpRequest) -> func.HttpResponse:
+    result = run_health_checks()
+    status_code = 200 if result["status"] == "healthy" else 503
+    return func.HttpResponse(
+        body=json.dumps(result),
+        status_code=status_code,
+        mimetype="application/json",
+    )
 
 
 @app.route(route="webhook", methods=["POST"], auth_level=func.AuthLevel.FUNCTION)
