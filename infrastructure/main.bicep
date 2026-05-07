@@ -7,6 +7,9 @@ param location string = resourceGroup().location
 @description('Use Investec sandbox API')
 param investecSandbox bool = true
 
+@description('Runtime environment name exposed to the Function App')
+param appEnvironment string = 'dev'
+
 @description('Object ID of the deploying user — grants Key Vault Secrets Officer for secret population')
 param deployingUserObjectId string = ''
 
@@ -70,6 +73,7 @@ module functionApp 'modules/function-app.bicep' = {
     appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
     keyVaultName: keyvault.outputs.name
     investecSandbox: investecSandbox
+    appEnvironment: appEnvironment
     emailSenderAddress: communication.outputs.senderAddress
   }
 }

@@ -9,6 +9,8 @@ param(
 
     [string]$AppName = "julius",
 
+    [string]$AppEnvironment = "dev",
+
     [bool]$InvestecSandbox = $true
 )
 
@@ -38,7 +40,7 @@ Write-Host "`n[3/6] Deploying Bicep template..." -ForegroundColor Cyan
 $deployOutput = az deployment group create `
     --resource-group $ResourceGroup `
     --template-file "$PSScriptRoot\main.bicep" `
-    --parameters appName=$AppName location=$Location investecSandbox=$($InvestecSandbox.ToString().ToLower()) deployingUserObjectId=$deployingUserObjectId `
+    --parameters appName=$AppName location=$Location appEnvironment=$AppEnvironment investecSandbox=$($InvestecSandbox.ToString().ToLower()) deployingUserObjectId=$deployingUserObjectId `
     --query properties.outputs `
     --output json | ConvertFrom-Json
 

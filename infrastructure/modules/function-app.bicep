@@ -4,6 +4,7 @@ param storageAccountName string
 param appInsightsConnectionString string
 param keyVaultName string
 param investecSandbox bool
+param appEnvironment string
 param emailSenderAddress string
 
 var planName = 'asp-${appName}'
@@ -57,6 +58,10 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
           value: appInsightsConnectionString
         }
         // Non-sensitive config
+        {
+          name: 'APP_ENV'
+          value: appEnvironment
+        }
         {
           name: 'INVESTEC_SANDBOX'
           value: string(investecSandbox)

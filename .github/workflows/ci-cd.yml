@@ -130,6 +130,12 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: dev
+    env:
+      AZURE_RESOURCE_GROUP: rg-julius-dev
+      AZURE_LOCATION: southafricanorth
+      APP_NAME: julius-dev
+      APP_ENV: dev
+      INVESTEC_SANDBOX: "true"
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -148,10 +154,90 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Deploy Azure infrastructure
+        id: infra
+        run: |
+          deploying_principal_app_id="$(az account show --query user.name --output tsv)"
+          deploying_principal_object_id="$(az ad sp show --id "$deploying_principal_app_id" --query id --output tsv)"
+
+          az group create \
+            --name "$AZURE_RESOURCE_GROUP" \
+            --location "$AZURE_LOCATION" \
+            --output none
+
+          outputs="$(az deployment group create \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --template-file infrastructure/main.bicep \
+            --parameters \
+              appName="$APP_NAME" \
+              location="$AZURE_LOCATION" \
+              appEnvironment="$APP_ENV" \
+              investecSandbox="$INVESTEC_SANDBOX" \
+              deployingUserObjectId="$deploying_principal_object_id" \
+            --query properties.outputs \
+            --output json)"
+
+          echo "function_app_name=$(jq -r '.functionAppName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
+          echo "key_vault_name=$(jq -r '.keyVaultName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
+          echo "cosmos_account_name=$(jq -r '.cosmosAccountName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
+          echo "acs_name=$(jq -r '.acsName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
+
+      - name: Populate generated Key Vault secrets
+        env:
+          KEY_VAULT_NAME: ${{ steps.infra.outputs.key_vault_name }}
+          COSMOS_ACCOUNT_NAME: ${{ steps.infra.outputs.cosmos_account_name }}
+          ACS_NAME: ${{ steps.infra.outputs.acs_name }}
+        run: |
+          cosmos_connection_string="$(az cosmosdb keys list \
+            --name "$COSMOS_ACCOUNT_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --type connection-strings \
+            --query "connectionStrings[0].connectionString" \
+            --output tsv)"
+
+          acs_connection_string="$(az communication list-key \
+            --name "$ACS_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --query "primaryConnectionString" \
+            --output tsv)"
+
+          az keyvault secret set \
+            --vault-name "$KEY_VAULT_NAME" \
+            --name cosmos-connection-string \
+            --value "$cosmos_connection_string" \
+            --output none
+
+          az keyvault secret set \
+            --vault-name "$KEY_VAULT_NAME" \
+            --name acs-connection-string \
+            --value "$acs_connection_string" \
+            --output none
+
+      - name: Populate external Key Vault secrets
+        env:
+          KEY_VAULT_NAME: ${{ steps.infra.outputs.key_vault_name }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          INVESTEC_CLIENT_ID: ${{ secrets.INVESTEC_CLIENT_ID }}
+          INVESTEC_CLIENT_SECRET: ${{ secrets.INVESTEC_CLIENT_SECRET }}
+          INVESTEC_API_KEY: ${{ secrets.INVESTEC_API_KEY }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_WHATSAPP_NUMBER: ${{ secrets.TWILIO_WHATSAPP_NUMBER }}
+          EMAIL_RECIPIENT_ADDRESS: ${{ secrets.EMAIL_RECIPIENT_ADDRESS }}
+        run: |
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name openai-api-key --value "$OPENAI_API_KEY" --output none
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name investec-client-id --value "$INVESTEC_CLIENT_ID" --output none
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name investec-client-secret --value "$INVESTEC_CLIENT_SECRET" --output none
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name investec-api-key --value "$INVESTEC_API_KEY" --output none
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name twilio-account-sid --value "$TWILIO_ACCOUNT_SID" --output none
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name twilio-auth-token --value "$TWILIO_AUTH_TOKEN" --output none
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name twilio-whatsapp-number --value "$TWILIO_WHATSAPP_NUMBER" --output none
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name email-recipient-address --value "$EMAIL_RECIPIENT_ADDRESS" --output none
+
       - name: Deploy to Azure Functions
         uses: azure/functions-action@bc63708cc6539760eea18d8a7de4ce8ef5fdf593 # v1
         with:
-          app-name: func-julius-dev-v5jul3xg2nnwy
+          app-name: ${{ steps.infra.outputs.function_app_name }}
           package: .
           scm-do-build-during-deployment: true
           enable-oryx-build: true
@@ -162,6 +248,12 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: prod
+    env:
+      AZURE_RESOURCE_GROUP: rg-julius-prod
+      AZURE_LOCATION: southafricanorth
+      APP_NAME: julius-prod
+      APP_ENV: prod
+      INVESTEC_SANDBOX: "false"
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -180,10 +272,90 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Deploy Azure infrastructure
+        id: infra
+        run: |
+          deploying_principal_app_id="$(az account show --query user.name --output tsv)"
+          deploying_principal_object_id="$(az ad sp show --id "$deploying_principal_app_id" --query id --output tsv)"
+
+          az group create \
+            --name "$AZURE_RESOURCE_GROUP" \
+            --location "$AZURE_LOCATION" \
+            --output none
+
+          outputs="$(az deployment group create \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --template-file infrastructure/main.bicep \
+            --parameters \
+              appName="$APP_NAME" \
+              location="$AZURE_LOCATION" \
+              appEnvironment="$APP_ENV" \
+              investecSandbox="$INVESTEC_SANDBOX" \
+              deployingUserObjectId="$deploying_principal_object_id" \
+            --query properties.outputs \
+            --output json)"
+
+          echo "function_app_name=$(jq -r '.functionAppName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
+          echo "key_vault_name=$(jq -r '.keyVaultName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
+          echo "cosmos_account_name=$(jq -r '.cosmosAccountName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
+          echo "acs_name=$(jq -r '.acsName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
+
+      - name: Populate generated Key Vault secrets
+        env:
+          KEY_VAULT_NAME: ${{ steps.infra.outputs.key_vault_name }}
+          COSMOS_ACCOUNT_NAME: ${{ steps.infra.outputs.cosmos_account_name }}
+          ACS_NAME: ${{ steps.infra.outputs.acs_name }}
+        run: |
+          cosmos_connection_string="$(az cosmosdb keys list \
+            --name "$COSMOS_ACCOUNT_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --type connection-strings \
+            --query "connectionStrings[0].connectionString" \
+            --output tsv)"
+
+          acs_connection_string="$(az communication list-key \
+            --name "$ACS_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --query "primaryConnectionString" \
+            --output tsv)"
+
+          az keyvault secret set \
+            --vault-name "$KEY_VAULT_NAME" \
+            --name cosmos-connection-string \
+            --value "$cosmos_connection_string" \
+            --output none
+
+          az keyvault secret set \
+            --vault-name "$KEY_VAULT_NAME" \
+            --name acs-connection-string \
+            --value "$acs_connection_string" \
+            --output none
+
+      - name: Populate external Key Vault secrets
+        env:
+          KEY_VAULT_NAME: ${{ steps.infra.outputs.key_vault_name }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          INVESTEC_CLIENT_ID: ${{ secrets.INVESTEC_CLIENT_ID }}
+          INVESTEC_CLIENT_SECRET: ${{ secrets.INVESTEC_CLIENT_SECRET }}
+          INVESTEC_API_KEY: ${{ secrets.INVESTEC_API_KEY }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_WHATSAPP_NUMBER: ${{ secrets.TWILIO_WHATSAPP_NUMBER }}
+          EMAIL_RECIPIENT_ADDRESS: ${{ secrets.EMAIL_RECIPIENT_ADDRESS }}
+        run: |
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name openai-api-key --value "$OPENAI_API_KEY" --output none
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name investec-client-id --value "$INVESTEC_CLIENT_ID" --output none
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name investec-client-secret --value "$INVESTEC_CLIENT_SECRET" --output none
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name investec-api-key --value "$INVESTEC_API_KEY" --output none
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name twilio-account-sid --value "$TWILIO_ACCOUNT_SID" --output none
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name twilio-auth-token --value "$TWILIO_AUTH_TOKEN" --output none
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name twilio-whatsapp-number --value "$TWILIO_WHATSAPP_NUMBER" --output none
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name email-recipient-address --value "$EMAIL_RECIPIENT_ADDRESS" --output none
+
       - name: Deploy to Azure Functions
         uses: azure/functions-action@bc63708cc6539760eea18d8a7de4ce8ef5fdf593 # v1
         with:
-          app-name: ${{ vars.FUNCTION_APP_NAME }}
+          app-name: ${{ steps.infra.outputs.function_app_name }}
           package: .
           scm-do-build-during-deployment: true
           enable-oryx-build: true

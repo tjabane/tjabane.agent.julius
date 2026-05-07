@@ -10,18 +10,23 @@ def _utcnow() -> datetime:
 
 _SANDBOX_URL = "https://openapisandbox.investec.com"
 _PROD_URL = "https://openapi.investec.com"
+_DEFAULT_TIMEOUT_SECONDS = 5.0
 
 
 class InvestecClient:
-    def __init__(self):
+    def __init__(self, timeout: float = _DEFAULT_TIMEOUT_SECONDS):
         self._client_id = os.environ["INVESTEC_CLIENT_ID"]
         self._client_secret = os.environ["INVESTEC_CLIENT_SECRET"]
         self._api_key = os.environ["INVESTEC_API_KEY"]
         sandbox = os.environ.get("INVESTEC_SANDBOX", "true").lower() == "true"
         default_url = _SANDBOX_URL if sandbox else _PROD_URL
         self._base = os.environ.get("INVESTEC_BASE_URL", default_url).rstrip("/")
+        self._timeout = timeout
         self._token: str | None = None
         self._token_expires_at: datetime = _utcnow()
+
+    def check_auth(self) -> None:
+        self._ensure_token()
 
     def _ensure_token(self) -> None:
         if self._token and _utcnow() < self._token_expires_at:
@@ -32,6 +37,7 @@ class InvestecClient:
             data={"grant_type": "client_credentials", "scope": "accounts balances transactions transfers beneficiarypayments documents.statements documents.taxcertificates"},
             auth=(self._client_id, self._client_secret),
             headers={"x-api-key": self._api_key},
+            timeout=self._timeout,
         )
         resp.raise_for_status()
         data = resp.json()
@@ -44,6 +50,7 @@ class InvestecClient:
             f"{self._base}{path}",
             params=params,
             headers={"Authorization": f"Bearer {self._token}", "x-api-key": self._api_key},
+            timeout=self._timeout,
         )
         resp.raise_for_status()
         return resp.json().get("data", resp.json())
@@ -54,6 +61,7 @@ class InvestecClient:
             f"{self._base}{path}",
             json=body,
             headers={"Authorization": f"Bearer {self._token}", "x-api-key": self._api_key},
+            timeout=self._timeout,
         )
         resp.raise_for_status()
         return resp.json().get("data", resp.json())
