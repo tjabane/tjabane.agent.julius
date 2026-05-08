@@ -1,5 +1,5 @@
-# Julius — Azure infrastructure deployment script
-# Usage: .\infra\deploy.ps1 -ResourceGroup "rg-julius" -Location "southafricanorth"
+# Julius - Azure Container Apps infrastructure and image deployment
+# Usage: .\infrastructure\deploy.ps1 -ResourceGroup "rg-julius" -Location "southafricanorth"
 
 param(
     [Parameter(Mandatory)]
@@ -11,14 +11,15 @@ param(
 
     [string]$AppEnvironment = "dev",
 
-    [bool]$InvestecSandbox = $true
+    [bool]$InvestecSandbox = $true,
+
+    [string]$ImageTag = "latest"
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-# ── 1. Login check ────────────────────────────────────────────────────────────
-Write-Host "`n[1/6] Checking Azure login..." -ForegroundColor Cyan
+Write-Host "`n[1/8] Checking Azure login..." -ForegroundColor Cyan
 $account = az account show 2>$null | ConvertFrom-Json
 if (-not $account) {
     Write-Host "Not logged in. Running az login..." -ForegroundColor Yellow
@@ -27,16 +28,15 @@ if (-not $account) {
 }
 Write-Host "    Subscription: $($account.name)" -ForegroundColor Green
 
-# ── 2. Resource group ─────────────────────────────────────────────────────────
-Write-Host "`n[2/6] Ensuring resource group '$ResourceGroup'..." -ForegroundColor Cyan
+Write-Host "`n[2/8] Ensuring resource group '$ResourceGroup'..." -ForegroundColor Cyan
 az group create --name $ResourceGroup --location $Location --output none
 Write-Host "    Ready." -ForegroundColor Green
 
-# ── 3. Get deploying user object ID ───────────────────────────────────────────
+Write-Host "`n[3/8] Resolving deploying user..." -ForegroundColor Cyan
 $deployingUserObjectId = (az ad signed-in-user show --query id -o tsv)
+Write-Host "    Object ID: $deployingUserObjectId" -ForegroundColor Green
 
-# ── 4. Deploy Bicep ───────────────────────────────────────────────────────────
-Write-Host "`n[3/6] Deploying Bicep template..." -ForegroundColor Cyan
+Write-Host "`n[4/8] Deploying Bicep infrastructure..." -ForegroundColor Cyan
 $deployOutput = az deployment group create `
     --resource-group $ResourceGroup `
     --template-file "$PSScriptRoot\main.bicep" `
@@ -47,53 +47,70 @@ $deployOutput = az deployment group create `
 $keyVaultName     = $deployOutput.keyVaultName.value
 $cosmosAccount    = $deployOutput.cosmosAccountName.value
 $acsName          = $deployOutput.acsName.value
-$functionAppUrl   = $deployOutput.functionAppUrl.value
+$containerAppUrl  = $deployOutput.containerAppUrl.value
+$acrName          = $deployOutput.acrName.value
+$acrLoginServer   = $deployOutput.acrLoginServer.value
 
-Write-Host "    Function App : $functionAppUrl" -ForegroundColor Green
-Write-Host "    Key Vault    : $keyVaultName" -ForegroundColor Green
+Write-Host "    Container App : $containerAppUrl" -ForegroundColor Green
+Write-Host "    ACR           : $acrLoginServer" -ForegroundColor Green
+Write-Host "    Key Vault     : $keyVaultName" -ForegroundColor Green
 
-# ── 5. Populate Key Vault secrets ─────────────────────────────────────────────
-Write-Host "`n[4/6] Populating Key Vault secrets..." -ForegroundColor Cyan
-
-# Auto-populate connection strings from deployed resources
+Write-Host "`n[5/8] Populating Key Vault secrets..." -ForegroundColor Cyan
 $cosmosConn = (az cosmosdb keys list --name $cosmosAccount --resource-group $ResourceGroup --type connection-strings --query "connectionStrings[0].connectionString" -o tsv)
 $acsConn    = (az communication list-key --name $acsName --resource-group $ResourceGroup --query "primaryConnectionString" -o tsv)
 
 az keyvault secret set --vault-name $keyVaultName --name "cosmos-connection-string" --value $cosmosConn --output none
-az keyvault secret set --vault-name $keyVaultName --name "acs-connection-string"    --value $acsConn    --output none
-Write-Host "    cosmos-connection-string  set" -ForegroundColor Green
-Write-Host "    acs-connection-string     set" -ForegroundColor Green
+az keyvault secret set --vault-name $keyVaultName --name "acs-connection-string" --value $acsConn --output none
+Write-Host "    cosmos-connection-string set" -ForegroundColor Green
+Write-Host "    acs-connection-string    set" -ForegroundColor Green
 
-# Prompt for secrets that must be provided manually
 $manualSecrets = @(
-    @{ Name = "openai-api-key";           Prompt = "OpenAI API key" }
-    @{ Name = "investec-client-id";      Prompt = "Investec Client ID" }
-    @{ Name = "investec-client-secret";  Prompt = "Investec Client Secret" }
-    @{ Name = "investec-api-key";        Prompt = "Investec API key (x-api-key)" }
-    @{ Name = "twilio-account-sid";      Prompt = "Twilio Account SID" }
-    @{ Name = "twilio-auth-token";       Prompt = "Twilio Auth Token" }
-    @{ Name = "twilio-whatsapp-number";  Prompt = "Twilio WhatsApp number (e.g. +1415XXXXXXX)" }
-    @{ Name = "email-recipient-address"; Prompt = "Your email address (report recipient)" }
+    @{ Name = "openai-api-key";           Prompt = "OpenAI API key" },
+    @{ Name = "investec-client-id";       Prompt = "Investec Client ID" },
+    @{ Name = "investec-client-secret";   Prompt = "Investec Client Secret" },
+    @{ Name = "investec-api-key";         Prompt = "Investec API key (x-api-key)" },
+    @{ Name = "twilio-account-sid";       Prompt = "Twilio Account SID" },
+    @{ Name = "twilio-auth-token";        Prompt = "Twilio Auth Token" },
+    @{ Name = "twilio-whatsapp-number";   Prompt = "Twilio WhatsApp number (e.g. +1415XXXXXXX)" },
+    @{ Name = "email-recipient-address";  Prompt = "Your email address (report recipient)" }
 )
 
 foreach ($secret in $manualSecrets) {
+    $existing = az keyvault secret show --vault-name $keyVaultName --name $secret.Name --query value -o tsv 2>$null
+    if ($existing) {
+        Write-Host "    $($secret.Name) already set" -ForegroundColor Green
+        continue
+    }
+
     $value = Read-Host -Prompt "    Enter $($secret.Prompt)" -AsSecureString
     $plain = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
         [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($value)
     )
     az keyvault secret set --vault-name $keyVaultName --name $secret.Name --value $plain --output none
-    Write-Host "    $($secret.Name)  set" -ForegroundColor Green
+    Write-Host "    $($secret.Name) set" -ForegroundColor Green
 }
 
-# ── 6. Done ───────────────────────────────────────────────────────────────────
-Write-Host "`n[5/6] Restarting Function App to pick up Key Vault references..." -ForegroundColor Cyan
-$funcAppName = (az functionapp list --resource-group $ResourceGroup --query "[0].name" -o tsv)
-az functionapp restart --name $funcAppName --resource-group $ResourceGroup --output none
-Write-Host "    Restarted." -ForegroundColor Green
+Write-Host "`n[6/8] Building and pushing container image with ACR Tasks..." -ForegroundColor Cyan
+$imageName = "julius:$ImageTag"
+$image = "$acrLoginServer/$imageName"
+az acr build --registry $acrName --image $imageName "$PSScriptRoot\.." --output none
+Write-Host "    Built: $image" -ForegroundColor Green
 
-Write-Host "`n[6/6] Deployment complete!" -ForegroundColor Green
+Write-Host "`n[7/8] Applying runtime secrets and container image..." -ForegroundColor Cyan
+$deployOutput = az deployment group create `
+    --resource-group $ResourceGroup `
+    --template-file "$PSScriptRoot\main.bicep" `
+    --parameters appName=$AppName location=$Location appEnvironment=$AppEnvironment investecSandbox=$($InvestecSandbox.ToString().ToLower()) deployingUserObjectId=$deployingUserObjectId containerImage=$image configureRuntimeSecrets=true `
+    --query properties.outputs `
+    --output json | ConvertFrom-Json
+
+$containerAppUrl = $deployOutput.containerAppUrl.value
+Write-Host "    Runtime configuration applied." -ForegroundColor Green
+
+Write-Host "`n[8/8] Deployment complete!" -ForegroundColor Green
 Write-Host ""
-Write-Host "  Function App URL : $functionAppUrl" -ForegroundColor White
-Write-Host "  Webhook endpoint : $functionAppUrl/api/webhook" -ForegroundColor White
+Write-Host "  Container App URL : $containerAppUrl" -ForegroundColor White
+Write-Host "  Webhook endpoint  : $containerAppUrl/webhook" -ForegroundColor White
+Write-Host "  Legacy alias      : $containerAppUrl/api/webhook" -ForegroundColor White
 Write-Host ""
-Write-Host "  Next step: configure this webhook URL in your Twilio WhatsApp sandbox." -ForegroundColor Yellow
+Write-Host "  Next step: configure the webhook URL in your Twilio WhatsApp sandbox." -ForegroundColor Yellow

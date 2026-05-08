@@ -1,0 +1,12 @@
+.git
+.github
+.pytest_cache
+.venv
+.vscode
+.python_packages
+__pycache__
+*.pyc
+.env
+local.settings.json
+tests
+infrastructure

@@ -7,11 +7,17 @@ param location string = resourceGroup().location
 @description('Use Investec sandbox API')
 param investecSandbox bool = true
 
-@description('Runtime environment name exposed to the Function App')
+@description('Runtime environment name exposed to the Container App')
 param appEnvironment string = 'dev'
 
-@description('Object ID of the deploying user — grants Key Vault Secrets Officer for secret population')
+@description('Object ID of the deploying user - grants Key Vault Secrets Officer for secret population')
 param deployingUserObjectId string = ''
+
+@description('Initial container image. The deploy script updates this to the image built in this repo.')
+param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+
+@description('Configure runtime Key Vault secret references and secret-backed environment variables.')
+param configureRuntimeSecrets bool = false
 
 var suffix = take(uniqueString(resourceGroup().id), 8)
 var safeAppName = replace(appName, '-', '')
@@ -21,6 +27,12 @@ var storageAccountName = 'st${take(safeAppName, 14)}${suffix}'
 
 // Key Vault: max 24, alphanumeric + hyphens, no consecutive hyphens
 var keyVaultName = 'kv-${take(safeAppName, 11)}-${suffix}'
+var runtimeIdentityName = 'id-${appName}-${suffix}'
+
+resource runtimeIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: runtimeIdentityName
+  location: location
+}
 
 module storage 'modules/storage.bicep' = {
   name: 'storage'
@@ -64,32 +76,41 @@ module keyvault 'modules/keyvault.bicep' = {
   }
 }
 
-module functionApp 'modules/function-app.bicep' = {
-  name: 'functionApp'
-  params: {
-    appName: appName
-    location: location
-    storageAccountName: storage.outputs.name
-    appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
-    keyVaultName: keyvault.outputs.name
-    investecSandbox: investecSandbox
-    appEnvironment: appEnvironment
-    emailSenderAddress: communication.outputs.senderAddress
-  }
-}
-
 module keyvaultRoleAssignment 'modules/keyvault.bicep' = {
-  name: 'keyvaultFunctionAccess'
+  name: 'keyvaultContainerAppAccess'
   params: {
     name: keyvault.outputs.name
     location: location
     deployingUserObjectId: deployingUserObjectId
-    functionAppPrincipalId: functionApp.outputs.principalId
+    runtimePrincipalId: runtimeIdentity.properties.principalId
   }
 }
 
-output functionAppUrl string = functionApp.outputs.url
+module containerApp 'modules/container-app.bicep' = {
+  name: 'containerApp'
+  params: {
+    appName: appName
+    location: location
+    appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
+    keyVaultName: keyvault.outputs.name
+    userAssignedIdentityId: runtimeIdentity.id
+    userAssignedIdentityPrincipalId: runtimeIdentity.properties.principalId
+    investecSandbox: investecSandbox
+    appEnvironment: appEnvironment
+    emailSenderAddress: communication.outputs.senderAddress
+    containerImage: containerImage
+    configureRuntimeSecrets: configureRuntimeSecrets
+  }
+  dependsOn: [
+    keyvaultRoleAssignment
+  ]
+}
+
+output containerAppUrl string = containerApp.outputs.url
 output keyVaultName string = keyvault.outputs.name
 output cosmosAccountName string = cosmos.outputs.accountName
 output acsName string = communication.outputs.acsName
-output functionAppName string = functionApp.outputs.name
+output containerAppName string = containerApp.outputs.name
+output containerAppsEnvironmentName string = containerApp.outputs.environmentName
+output acrName string = containerApp.outputs.acrName
+output acrLoginServer string = containerApp.outputs.acrLoginServer
