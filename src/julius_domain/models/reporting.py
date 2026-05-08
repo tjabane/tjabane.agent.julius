@@ -1,7 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from pydantic import BaseModel, Field
 import uuid
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class Frequency(str, Enum):
@@ -15,8 +19,8 @@ class Schedule(BaseModel):
     frequency: Frequency
     next_run: datetime
     enabled: bool = True
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utcnow)
+    updated_at: datetime = Field(default_factory=_utcnow)
 
 
 class Report(BaseModel):
@@ -24,4 +28,4 @@ class Report(BaseModel):
     query: str
     content: str
     schedule_id: str | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utcnow)

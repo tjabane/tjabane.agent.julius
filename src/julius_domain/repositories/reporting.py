@@ -1,6 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from julius_domain.models.reporting import Schedule, Report
 from .base import BaseRepository
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
 
 class ScheduleRepository(BaseRepository):
     def __init__(self):
@@ -11,7 +16,7 @@ class ScheduleRepository(BaseRepository):
         return Schedule(**data) if data else None
 
     def save(self, schedule: Schedule) -> Schedule:
-        schedule.updated_at = datetime.utcnow()
+        schedule.updated_at = _utcnow()
         self._upsert(schedule)
         return schedule
 
@@ -23,7 +28,7 @@ class ScheduleRepository(BaseRepository):
         return [Schedule(**r) for r in rows]
 
     def list_due(self) -> list[Schedule]:
-        now = datetime.utcnow().isoformat()
+        now = _utcnow().isoformat()
         rows = self._query(
             "SELECT * FROM c WHERE c.enabled = true AND c.next_run <= @now",
             [{"name": "@now", "value": now}],

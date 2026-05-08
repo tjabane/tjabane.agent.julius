@@ -3,6 +3,8 @@ from typing import Any
 import httpx
 import os
 
+from julius_application.observability import mark_success, start_span
+
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -26,45 +28,53 @@ class InvestecClient:
         self._token_expires_at: datetime = _utcnow()
 
     def check_auth(self) -> None:
-        self._ensure_token()
+        with start_span("investec.auth", {"dependency.name": "investec"}) as span:
+            self._ensure_token()
+            mark_success(span)
 
     def _ensure_token(self) -> None:
         if self._token and _utcnow() < self._token_expires_at:
             return
-        url = f"{self._base}/identity/v2/oauth2/token"
-        resp = httpx.post(
-            url,
-            data={"grant_type": "client_credentials", "scope": "accounts balances transactions transfers beneficiarypayments documents.statements documents.taxcertificates"},
-            auth=(self._client_id, self._client_secret),
-            headers={"x-api-key": self._api_key},
-            timeout=self._timeout,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        self._token = data["access_token"]
-        self._token_expires_at = _utcnow() + timedelta(seconds=data["expires_in"] - 60)
+        with start_span("investec.token_request", {"dependency.name": "investec"}) as span:
+            url = f"{self._base}/identity/v2/oauth2/token"
+            resp = httpx.post(
+                url,
+                data={"grant_type": "client_credentials", "scope": "accounts balances transactions transfers beneficiarypayments documents.statements documents.taxcertificates"},
+                auth=(self._client_id, self._client_secret),
+                headers={"x-api-key": self._api_key},
+                timeout=self._timeout,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            self._token = data["access_token"]
+            self._token_expires_at = _utcnow() + timedelta(seconds=data["expires_in"] - 60)
+            mark_success(span)
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         self._ensure_token()
-        resp = httpx.get(
-            f"{self._base}{path}",
-            params=params,
-            headers={"Authorization": f"Bearer {self._token}", "x-api-key": self._api_key},
-            timeout=self._timeout,
-        )
-        resp.raise_for_status()
-        return resp.json().get("data", resp.json())
+        with start_span("investec.get", {"dependency.name": "investec"}) as span:
+            resp = httpx.get(
+                f"{self._base}{path}",
+                params=params,
+                headers={"Authorization": f"Bearer {self._token}", "x-api-key": self._api_key},
+                timeout=self._timeout,
+            )
+            resp.raise_for_status()
+            mark_success(span)
+            return resp.json().get("data", resp.json())
 
     def _post(self, path: str, body: dict) -> Any:
         self._ensure_token()
-        resp = httpx.post(
-            f"{self._base}{path}",
-            json=body,
-            headers={"Authorization": f"Bearer {self._token}", "x-api-key": self._api_key},
-            timeout=self._timeout,
-        )
-        resp.raise_for_status()
-        return resp.json().get("data", resp.json())
+        with start_span("investec.post", {"dependency.name": "investec"}) as span:
+            resp = httpx.post(
+                f"{self._base}{path}",
+                json=body,
+                headers={"Authorization": f"Bearer {self._token}", "x-api-key": self._api_key},
+                timeout=self._timeout,
+            )
+            resp.raise_for_status()
+            mark_success(span)
+            return resp.json().get("data", resp.json())
 
     def get_accounts(self) -> list[dict]:
         return self._get("/za/pb/v1/accounts").get("accounts", [])

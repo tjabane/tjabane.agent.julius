@@ -1,6 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from julius_domain.models.knowledge import Memory, Skill
 from .base import BaseRepository
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class MemoryRepository(BaseRepository):
@@ -22,7 +26,7 @@ class MemoryRepository(BaseRepository):
         parameters = [{"name": f"@kw{i}", "value": kw} for i, kw in enumerate(keywords)]
         rows = self._query(f"SELECT * FROM c WHERE {conditions}", parameters)  # nosec B608 - conditions contains only parameterized placeholder names, values are passed separately
         results = [Memory(**r) for r in rows]
-        now = datetime.utcnow()
+        now = _utcnow()
         for m in results:
             m.last_referenced = now
             self._upsert(m)
@@ -44,7 +48,7 @@ class SkillRepository(BaseRepository):
         return Skill(**rows[0]) if rows else None
 
     def save(self, skill: Skill) -> Skill:
-        skill.updated_at = datetime.utcnow()
+        skill.updated_at = _utcnow()
         existing = self.get_by_name(skill.name)
         if existing:
             skill.id = existing.id

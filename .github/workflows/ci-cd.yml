@@ -146,8 +146,7 @@ jobs:
 
       - name: Generate requirements.txt
         run: |
-          uv export --no-dev --no-hashes -o requirements.txt
-          sed -i '/^-e /d' requirements.txt
+          uv export --no-dev --no-hashes --no-emit-project -o requirements.txt
 
       - name: Login to Azure
         uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2
@@ -264,8 +263,7 @@ jobs:
 
       - name: Generate requirements.txt
         run: |
-          uv export --no-dev --no-hashes -o requirements.txt
-          sed -i '/^-e /d' requirements.txt
+          uv export --no-dev --no-hashes --no-emit-project -o requirements.txt
 
       - name: Login to Azure
         uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2

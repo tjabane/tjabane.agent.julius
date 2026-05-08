@@ -1,6 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from julius_domain.models.agent import Session
 from .base import BaseRepository
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
 
 class SessionRepository(BaseRepository):
     def __init__(self):
@@ -11,7 +16,7 @@ class SessionRepository(BaseRepository):
         return Session(**data) if data else None
 
     def save(self, session: Session) -> Session:
-        session.updated_at = datetime.utcnow()
+        session.updated_at = _utcnow()
         session.id = session.whatsapp_number
         self._upsert(session)
         return session

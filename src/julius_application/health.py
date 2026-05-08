@@ -13,6 +13,7 @@ from azure.cosmos import CosmosClient
 from openai import OpenAI
 from twilio.rest import Client as TwilioRestClient
 
+from julius_application.observability import mark_success, record_exception, set_attributes, start_span
 from julius_services.finance.investec_client import InvestecClient
 
 _TIMEOUT_SECONDS = 5.0
@@ -45,20 +46,30 @@ class HealthResult:
 
 
 def _timed(health_check: HealthCheck) -> HealthResult:
-    start = time.perf_counter()
-    try:
-        health_check.check()
-        return HealthResult(
-            status="healthy",
-            latency_ms=round((time.perf_counter() - start) * 1000, 1),
-        )
-    except Exception as e:
-        logging.exception("Health check failed: %s", health_check.name)
-        return HealthResult(
-            status="unhealthy",
-            latency_ms=round((time.perf_counter() - start) * 1000, 1),
-            error=type(e).__name__,
-        )
+    with start_span("dependency.health_check", {"dependency.name": health_check.name}) as span:
+        start = time.perf_counter()
+        try:
+            health_check.check()
+            latency_ms = round((time.perf_counter() - start) * 1000, 1)
+            set_attributes(span, {
+                "dependency.latency_ms": latency_ms,
+                "health.status": "healthy",
+            })
+            mark_success(span)
+            return HealthResult(status="healthy", latency_ms=latency_ms)
+        except Exception as e:
+            logging.exception("Health check failed: %s", health_check.name)
+            latency_ms = round((time.perf_counter() - start) * 1000, 1)
+            set_attributes(span, {
+                "dependency.latency_ms": latency_ms,
+                "health.status": "unhealthy",
+            })
+            record_exception(span, e)
+            return HealthResult(
+                status="unhealthy",
+                latency_ms=latency_ms,
+                error=type(e).__name__,
+            )
 
 
 def _check_cosmos() -> None:
@@ -108,17 +119,26 @@ CHECKS: tuple[HealthCheck, ...] = (
 
 
 def run_all() -> dict:
-    results: dict[str, dict] = {}
-    with ThreadPoolExecutor(max_workers=len(CHECKS)) as pool:
-        future_to_check = {pool.submit(_timed, health_check): health_check for health_check in CHECKS}
-        for future in as_completed(future_to_check):
-            health_check = future_to_check[future]
-            results[health_check.name] = future.result().as_dict()
+    with start_span("health.run_all", {"app.operation": "health"}) as span:
+        results: dict[str, dict] = {}
+        with ThreadPoolExecutor(max_workers=len(CHECKS)) as pool:
+            future_to_check = {pool.submit(_timed, health_check): health_check for health_check in CHECKS}
+            for future in as_completed(future_to_check):
+                health_check = future_to_check[future]
+                results[health_check.name] = future.result().as_dict()
 
-    critical_results = [
-        results[health_check.name]
-        for health_check in CHECKS
-        if health_check.critical
-    ]
-    overall = "healthy" if all(r["status"] == "healthy" for r in critical_results) else "unhealthy"
-    return {"status": overall, "dependencies": results}
+        critical_results = [
+            results[health_check.name]
+            for health_check in CHECKS
+            if health_check.critical
+        ]
+        overall = "healthy" if all(r["status"] == "healthy" for r in critical_results) else "unhealthy"
+        set_attributes(span, {
+            "health.status": overall,
+            "health.dependency_count": len(results),
+        })
+        if overall == "healthy":
+            mark_success(span)
+        else:
+            span.set_attribute("app.status", "failure")
+        return {"status": overall, "dependencies": results}

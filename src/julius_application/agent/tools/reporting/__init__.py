@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 from julius_domain.models.reporting import Schedule, Frequency, Report
 from julius_domain.repositories.reporting import ScheduleRepository, ReportRepository
@@ -11,6 +11,10 @@ if TYPE_CHECKING:
 _schedule_repo: ScheduleRepository | None = None
 _report_repo: ReportRepository | None = None
 _email: EmailService | None = None
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def _get_schedule_repo() -> ScheduleRepository:
@@ -35,7 +39,7 @@ def _get_email() -> EmailService:
 
 
 def _next_run_default(frequency: Frequency) -> datetime:
-    tomorrow = datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0) + timedelta(days=1)
+    tomorrow = _utcnow().replace(hour=6, minute=0, second=0, microsecond=0) + timedelta(days=1)
     return tomorrow
 
 
