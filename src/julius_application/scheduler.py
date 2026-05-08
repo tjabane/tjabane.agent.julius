@@ -5,7 +5,6 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from julius_application.agent.agent import run_scheduled
-from julius_application.observability import mark_success, record_exception, start_span
 from julius_domain.models.reporting import Frequency
 from julius_domain.repositories.reporting import ScheduleRepository
 
@@ -17,20 +16,14 @@ class SchedulerService:
         self._schedules = schedules or ScheduleRepository()
 
     def run_due(self) -> None:
-        with start_span("scheduler.run", {"app.operation": "scheduler"}) as span:
-            due = self._schedules.list_due()
-            span.set_attribute("scheduler.due_count", len(due))
-            for schedule in due:
-                with start_span("scheduled_report.run", {"app.schedule_id": schedule.id}) as child_span:
-                    try:
-                        run_scheduled(schedule_id=schedule.id, query=schedule.query)
-                        schedule.next_run = next_run(schedule.frequency)
-                        self._schedules.save(schedule)
-                        mark_success(child_span)
-                    except Exception as exc:
-                        record_exception(child_span, exc)
-                        _LOGGER.exception("Scheduled run failed for %s", schedule.id)
-            mark_success(span)
+        due = self._schedules.list_due()
+        for schedule in due:
+            try:
+                run_scheduled(schedule_id=schedule.id, query=schedule.query)
+                schedule.next_run = next_run(schedule.frequency)
+                self._schedules.save(schedule)
+            except Exception:
+                _LOGGER.exception("Scheduled run failed for %s", schedule.id)
 
 
 def next_run(frequency: Frequency) -> datetime:

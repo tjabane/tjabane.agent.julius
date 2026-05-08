@@ -42,14 +42,6 @@ module storage 'modules/storage.bicep' = {
   }
 }
 
-module monitoring 'modules/monitoring.bicep' = {
-  name: 'monitoring'
-  params: {
-    appName: appName
-    location: location
-  }
-}
-
 module cosmos 'modules/cosmos.bicep' = {
   name: 'cosmos'
   params: {
@@ -91,7 +83,6 @@ module containerApp 'modules/container-app.bicep' = {
   params: {
     appName: appName
     location: location
-    appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
     keyVaultName: keyvault.outputs.name
     userAssignedIdentityId: runtimeIdentity.id
     userAssignedIdentityPrincipalId: runtimeIdentity.properties.principalId

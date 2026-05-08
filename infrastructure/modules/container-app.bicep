@@ -1,6 +1,5 @@
 param appName string
 param location string
-param appInsightsConnectionString string
 param keyVaultName string
 param userAssignedIdentityId string
 param userAssignedIdentityPrincipalId string
@@ -42,11 +41,6 @@ resource acrPullAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' 
 resource environment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: environmentName
   location: location
-  properties: {
-    appLogsConfiguration: {
-      destination: 'azure-monitor'
-    }
-  }
 }
 
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
@@ -142,10 +136,6 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'APP_ENV'
               value: appEnvironment
-            }
-            {
-              name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-              value: appInsightsConnectionString
             }
             {
               name: 'INVESTEC_SANDBOX'
