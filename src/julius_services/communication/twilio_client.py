@@ -1,5 +1,13 @@
-from twilio.rest import Client
 import os
+from dataclasses import dataclass
+
+from twilio.rest import Client
+
+
+@dataclass(frozen=True)
+class SentMessage:
+    to: str
+    body: str
 
 
 class TwilioClient:
@@ -20,6 +28,19 @@ class TwilioClient:
     @staticmethod
     def parse_webhook(form_data: dict) -> tuple[str, str]:
         """Returns (sender_number, message_body) from a Twilio webhook payload."""
-        number = form_data.get("From", "").replace("whatsapp:", "")
-        body = form_data.get("Body", "")
-        return number, body
+        return parse_webhook(form_data)
+
+
+class InMemoryTwilioClient:
+    def __init__(self) -> None:
+        self.sent_messages: list[SentMessage] = []
+
+    def send_message(self, to: str, body: str) -> None:
+        self.sent_messages.append(SentMessage(to=to, body=body))
+
+
+def parse_webhook(form_data: dict) -> tuple[str, str]:
+    """Returns (sender_number, message_body) from a Twilio webhook payload."""
+    number = form_data.get("From", "").replace("whatsapp:", "")
+    body = form_data.get("Body", "")
+    return number, body

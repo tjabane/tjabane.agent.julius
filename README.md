@@ -80,11 +80,17 @@ Install dependencies:
 uv sync
 ```
 
+Run Azure Cosmos DB locally. On Windows, install and start the Azure Cosmos DB Emulator, then initialize the local database and containers:
+
+```powershell
+uv run python scripts\init_local_cosmos.py
+```
+
 Run the API locally:
 
 ```powershell
 $env:SCHEDULER_ENABLED = "false"
-uv run uvicorn julius_application.api:app --app-dir src --reload --port 8000
+uv run uvicorn julius_application.fastapi_app:app --app-dir src --reload --port 8000
 ```
 
 Useful endpoints:

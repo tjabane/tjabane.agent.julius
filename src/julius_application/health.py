@@ -13,6 +13,11 @@ from azure.cosmos import CosmosClient
 from openai import OpenAI
 from twilio.rest import Client as TwilioRestClient
 
+from julius_services.communication.providers import (
+    get_message_sender,
+    get_report_sender,
+    is_local_environment,
+)
 from julius_services.finance.investec_client import InvestecClient
 
 _TIMEOUT_SECONDS = 5.0
@@ -76,6 +81,10 @@ def _check_openai() -> None:
 
 
 def _check_twilio() -> None:
+    if is_local_environment():
+        get_message_sender()
+        return
+
     client = TwilioRestClient(
         os.environ["TWILIO_ACCOUNT_SID"],
         os.environ["TWILIO_AUTH_TOKEN"],
@@ -84,6 +93,10 @@ def _check_twilio() -> None:
 
 
 def _check_acs_email_config() -> None:
+    if is_local_environment():
+        get_report_sender()
+        return
+
     EmailClient.from_connection_string(os.environ["AZURE_COMMUNICATION_CONNECTION_STRING"])
     if not os.environ.get("EMAIL_SENDER_ADDRESS"):
         raise RuntimeError("EMAIL_SENDER_ADDRESS is not set")

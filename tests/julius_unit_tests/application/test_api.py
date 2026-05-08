@@ -1,6 +1,15 @@
 from fastapi.testclient import TestClient
 
-from julius_application.api import app
+from julius_application.fastapi_app import app
+from julius_application.http_routes import get_message_sender
+
+
+class StubMessageSender:
+    def __init__(self):
+        self.sent_messages = []
+
+    def send_message(self, to: str, body: str) -> None:
+        self.sent_messages.append({"to": to, "body": body})
 
 
 def test_ping_returns_ok(monkeypatch):
@@ -16,7 +25,7 @@ def test_ping_returns_ok(monkeypatch):
 def test_health_returns_503_when_unhealthy(monkeypatch):
     monkeypatch.setenv("SCHEDULER_ENABLED", "false")
     monkeypatch.setattr(
-        "julius_application.api.run_health_checks",
+        "julius_application.http_routes.run_health_checks",
         lambda: {"status": "unhealthy", "dependencies": {}},
     )
 
@@ -43,3 +52,25 @@ def test_legacy_api_webhook_alias(monkeypatch):
         response = client.post("/api/webhook", data={})
 
     assert response.status_code == 400
+
+
+def test_webhook_uses_injected_message_sender(monkeypatch):
+    monkeypatch.setenv("SCHEDULER_ENABLED", "false")
+    sender = StubMessageSender()
+    app.dependency_overrides[get_message_sender] = lambda: sender
+    monkeypatch.setattr(
+        "julius_application.http_routes.run",
+        lambda whatsapp_number, user_message: f"reply to {user_message}",
+    )
+
+    try:
+        with TestClient(app) as client:
+            response = client.post(
+                "/webhook",
+                data={"From": "whatsapp:+27829876543", "Body": "balance"},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert sender.sent_messages == [{"to": "+27829876543", "body": "reply to balance"}]

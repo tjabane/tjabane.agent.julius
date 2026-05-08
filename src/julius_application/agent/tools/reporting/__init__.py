@@ -3,14 +3,14 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 from julius_domain.models.reporting import Schedule, Frequency, Report
 from julius_domain.repositories.reporting import ScheduleRepository, ReportRepository
-from julius_services.communication.email_service import EmailService
+from julius_services.communication.protocols import ReportSender
+from julius_services.communication.providers import get_report_sender
 
 if TYPE_CHECKING:
     from julius_application.agent.tools.deps import ToolDeps
 
 _schedule_repo: ScheduleRepository | None = None
 _report_repo: ReportRepository | None = None
-_email: EmailService | None = None
 
 
 def _utcnow() -> datetime:
@@ -29,13 +29,6 @@ def _get_report_repo() -> ReportRepository:
     if _report_repo is None:
         _report_repo = ReportRepository()
     return _report_repo
-
-
-def _get_email() -> EmailService:
-    global _email
-    if _email is None:
-        _email = EmailService()
-    return _email
 
 
 def _next_run_default(frequency: Frequency) -> datetime:
@@ -128,7 +121,7 @@ def handle(tool_name: str, inputs: dict, deps: ToolDeps | None = None) -> str:
 
     if tool_name == "send_email":
         repo = (deps.report_repo if deps and deps.report_repo else None) or _get_report_repo()
-        email = (deps.email if deps and deps.email else None) or _get_email()
+        email: ReportSender = (deps.email if deps and deps.email else None) or get_report_sender()
         report = Report(
             query=inputs["subject"],
             content=inputs["body"],
