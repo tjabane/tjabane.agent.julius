@@ -8,7 +8,6 @@ from julius_application.health import run_all as run_health_checks
 from julius_services.communication.protocols import MessageSender
 from julius_services.communication.providers import get_message_sender
 from julius_services.communication.twilio_client import parse_webhook
-
 router = APIRouter()
 
 

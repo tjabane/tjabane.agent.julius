@@ -16,7 +16,7 @@ from twilio.rest import Client as TwilioRestClient
 from julius_services.communication.providers import (
     get_message_sender,
     get_report_sender,
-    is_local_environment,
+    use_in_memory_communication,
 )
 from julius_services.finance.investec_client import InvestecClient
 
@@ -81,7 +81,7 @@ def _check_openai() -> None:
 
 
 def _check_twilio() -> None:
-    if is_local_environment():
+    if use_in_memory_communication():
         get_message_sender()
         return
 
@@ -93,7 +93,7 @@ def _check_twilio() -> None:
 
 
 def _check_acs_email_config() -> None:
-    if is_local_environment():
+    if use_in_memory_communication():
         get_report_sender()
         return
 
