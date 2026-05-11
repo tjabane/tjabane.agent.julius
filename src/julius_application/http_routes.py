@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Request, Response, status
-from julius_application.agent.agent import run
+from julius_agent.agent import run
 from julius_application.health import run_all as run_health_checks
 from julius_services.communication.protocols import MessageSender
 from julius_services.communication.providers import get_message_sender

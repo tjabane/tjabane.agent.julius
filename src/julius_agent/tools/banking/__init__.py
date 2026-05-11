@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from julius_services.finance.investec_client import InvestecClient
 
 if TYPE_CHECKING:
-    from julius_application.agent.tools.deps import ToolDeps
+    from julius_agent.tools.deps import ToolDeps
 
 _investec: InvestecClient | None = None
 

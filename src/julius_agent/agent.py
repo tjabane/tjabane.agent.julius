@@ -6,8 +6,8 @@ from pathlib import Path
 
 from openai import OpenAI
 
-from julius_application.agent.tools import ALL_DEFINITIONS, dispatch
-from julius_application.agent.tools.deps import ToolDeps
+from julius_agent.tools import ALL_DEFINITIONS, dispatch
+from julius_agent.tools.deps import ToolDeps
 from julius_domain.models.agent import Message
 from julius_domain.repositories.agent import SessionRepository
 

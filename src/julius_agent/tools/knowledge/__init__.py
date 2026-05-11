@@ -4,7 +4,7 @@ from julius_domain.models.knowledge import Memory, MemoryType, Skill
 from julius_domain.repositories.knowledge import MemoryRepository, SkillRepository
 
 if TYPE_CHECKING:
-    from julius_application.agent.tools.deps import ToolDeps
+    from julius_agent.tools.deps import ToolDeps
 
 _memory_repo: MemoryRepository | None = None
 _skill_repo: SkillRepository | None = None

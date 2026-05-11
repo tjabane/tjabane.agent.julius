@@ -4,7 +4,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 
-from julius_application.agent.agent import run_scheduled
+from julius_agent.agent import run_scheduled
 from julius_domain.models.reporting import Frequency
 from julius_domain.repositories.reporting import ScheduleRepository
 

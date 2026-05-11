@@ -7,7 +7,7 @@ from julius_services.communication.protocols import ReportSender
 from julius_services.communication.providers import get_report_sender
 
 if TYPE_CHECKING:
-    from julius_application.agent.tools.deps import ToolDeps
+    from julius_agent.tools.deps import ToolDeps
 
 _schedule_repo: ScheduleRepository | None = None
 _report_repo: ReportRepository | None = None
