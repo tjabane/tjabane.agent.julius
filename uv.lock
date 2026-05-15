@@ -1319,7 +1319,7 @@ wheels = [
 ]
 
 [[package]]
-name = "tjabane-agent-julius"
+name = "tjabane-agent-krabs"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

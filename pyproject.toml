@@ -1,5 +1,5 @@
 [project]
-name = "tjabane-agent-julius"
+name = "tjabane-agent-krabs"
 version = "0.1.0"
 description = "Personal Investec banking agent accessible via WhatsApp"
 readme = "README.md"
@@ -29,13 +29,13 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests/julius_unit_tests", "tests/julius_integration_tests"]
+testpaths = ["tests/krabs_unit_tests", "tests/krabs_integration_tests"]
 pythonpath = ["src"]
 markers = ["integration: live sandbox tests (require credentials)"]
 
 [tool.hatch.build.targets.wheel]
 sources = ["src"]
-packages = ["src/julius_application", "src/julius_agent", "src/julius_domain", "src/julius_services"]
+packages = ["src/krabs_application", "src/krabs_agent", "src/krabs_domain", "src/krabs_services"]
 
 [build-system]
 requires = ["hatchling"]

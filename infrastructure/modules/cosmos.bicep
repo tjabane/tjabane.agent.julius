@@ -1,7 +1,7 @@
 param accountName string
 param location string
 
-var databaseName = 'julius'
+var databaseName = 'krabs'
 var containers = [
   { name: 'sessions',   partitionKey: '/id' }
   { name: 'schedules',  partitionKey: '/id' }

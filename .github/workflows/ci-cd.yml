@@ -21,7 +21,7 @@ jobs:
         run: uv sync
 
       - name: Run unit tests with coverage
-        run: uv run pytest tests/julius_unit_tests/ -v --cov --cov-report=xml --cov-report=term-missing --cov-fail-under=80
+        run: uv run pytest tests/krabs_unit_tests/ -v --cov --cov-report=xml --cov-report=term-missing --cov-fail-under=80
 
       - name: Upload coverage report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -41,7 +41,7 @@ jobs:
       INVESTEC_SANDBOX: "true"
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       COSMOS_CONNECTION_STRING: ${{ secrets.COSMOS_CONNECTION_STRING }}
-      COSMOS_DATABASE: julius
+      COSMOS_DATABASE: krabs
       TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
       TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
       TWILIO_WHATSAPP_NUMBER: ${{ secrets.TWILIO_WHATSAPP_NUMBER }}
@@ -60,7 +60,7 @@ jobs:
         run: uv sync
 
       - name: Run integration tests
-        run: uv run pytest tests/julius_integration_tests/ -v
+        run: uv run pytest tests/krabs_integration_tests/ -v
 
   codeql:
     name: CodeQL analysis
@@ -131,9 +131,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     env:
-      AZURE_RESOURCE_GROUP: rg-julius-dev
+      AZURE_RESOURCE_GROUP: rg-krabs-dev
       AZURE_LOCATION: southafricanorth
-      APP_NAME: julius-dev
+      APP_NAME: krabs-dev
       APP_ENV: dev
       INVESTEC_SANDBOX: "true"
 
@@ -248,9 +248,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: prod
     env:
-      AZURE_RESOURCE_GROUP: rg-julius-prod
+      AZURE_RESOURCE_GROUP: rg-krabs-prod
       AZURE_LOCATION: southafricanorth
-      APP_NAME: julius-prod
+      APP_NAME: krabs-prod
       APP_ENV: prod
       INVESTEC_SANDBOX: "false"
 
