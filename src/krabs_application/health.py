@@ -104,9 +104,15 @@ def _check_acs_email_config() -> None:
 
 def _check_investec_reachable() -> None:
     sandbox = os.environ.get("INVESTEC_SANDBOX", "true").lower() == "true"
-    base = "https://openapisandbox.investec.com" if sandbox else "https://openapi.investec.com"
+    default_base = "https://openapisandbox.investec.com" if sandbox else "https://openapi.investec.com"
+    base = os.environ.get("INVESTEC_BASE_URL", default_base).rstrip("/")
     response = httpx.get(base, timeout=_TIMEOUT_SECONDS)
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        if 400 <= exc.response.status_code < 500:
+            return
+        raise
 
 
 CHECKS: tuple[HealthCheck, ...] = (

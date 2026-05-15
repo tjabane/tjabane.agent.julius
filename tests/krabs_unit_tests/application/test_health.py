@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 
 from krabs_application import health
@@ -72,12 +73,25 @@ def test_run_all_ignores_noncritical_failure_for_overall_status(monkeypatch):
 
 
 @patch("krabs_application.health.httpx.get")
-def test_investec_reachable_raises_on_non_success_status(mock_get):
-    response = MagicMock()
-    response.raise_for_status.side_effect = RuntimeError("500")
+def test_investec_reachable_allows_client_error_status(mock_get):
+    request = httpx.Request("GET", "https://openapisandbox.investec.com")
+    response = httpx.Response(404, request=request)
     mock_get.return_value = response
 
-    with pytest.raises(RuntimeError):
+    health._check_investec_reachable()
+
+
+@patch("krabs_application.health.httpx.get")
+def test_investec_reachable_raises_on_server_error_status(mock_get):
+    response = MagicMock()
+    response.raise_for_status.side_effect = httpx.HTTPStatusError(
+        "500",
+        request=MagicMock(),
+        response=MagicMock(status_code=500),
+    )
+    mock_get.return_value = response
+
+    with pytest.raises(httpx.HTTPStatusError):
         health._check_investec_reachable()
 
     response.raise_for_status.assert_called_once()
