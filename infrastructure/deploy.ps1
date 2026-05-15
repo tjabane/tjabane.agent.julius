@@ -1,5 +1,5 @@
-# Julius - Azure Container Apps infrastructure and image deployment
-# Usage: .\infrastructure\deploy.ps1 -ResourceGroup "rg-julius" -Location "southafricanorth"
+# Mr Krabs - Azure Container Apps infrastructure and image deployment
+# Usage: .\infrastructure\deploy.ps1 -ResourceGroup "rg-krabs" -Location "southafricanorth"
 
 param(
     [Parameter(Mandatory)]
@@ -7,7 +7,7 @@ param(
 
     [string]$Location = "southafricanorth",
 
-    [string]$AppName = "julius",
+    [string]$AppName = "krabs",
 
     [string]$AppEnvironment = "dev",
 
@@ -91,7 +91,7 @@ foreach ($secret in $manualSecrets) {
 }
 
 Write-Host "`n[6/8] Building and pushing container image with ACR Tasks..." -ForegroundColor Cyan
-$imageName = "julius:$ImageTag"
+$imageName = "krabs:$ImageTag"
 $image = "$acrLoginServer/$imageName"
 az acr build --registry $acrName --image $imageName "$PSScriptRoot\.." --output none
 Write-Host "    Built: $image" -ForegroundColor Green

@@ -1,12 +1,8 @@
-# Julius
-
-<p align="center">
-  <img src="https://static.tvmaze.com/uploads/images/medium_portrait/5/14972.jpg" alt="Julius" width="200"/>
-</p>
+# Mr Krabs
 
 > Your personal Investec banking agent, accessible via WhatsApp.
 
-Julius is an AI-powered assistant that lets you interact with your Investec accounts through WhatsApp. Send a message and Julius will check balances, review transactions, schedule reports, and more in plain English.
+Mr Krabs is an AI-powered assistant that lets you interact with your Investec accounts through WhatsApp. Send a message and Mr Krabs will check balances, review transactions, schedule reports, and more in plain English.
 
 ---
 
@@ -25,7 +21,7 @@ Julius is an AI-powered assistant that lets you interact with your Investec acco
 - Manage schedules: create, update, enable, disable, or delete
 
 ### Memory
-- Julius remembers your preferences, habits, and facts across conversations
+- Mr Krabs remembers your preferences, habits, and facts across conversations
 - Save and recall custom query shortcuts (skills)
 
 ---
@@ -90,7 +86,7 @@ Run the API locally:
 
 ```powershell
 $env:SCHEDULER_ENABLED = "false"
-uv run uvicorn julius_application.fastapi_app:app --app-dir src --reload --port 8000
+uv run uvicorn krabs_application.fastapi_app:app --app-dir src --reload --port 8000
 ```
 
 Useful endpoints:
@@ -107,7 +103,7 @@ Useful endpoints:
 Deploy infrastructure, populate Key Vault, build the image in ACR, and update the Container App:
 
 ```powershell
-.\infrastructure\deploy.ps1 -ResourceGroup "rg-julius" -Location "southafricanorth"
+.\infrastructure\deploy.ps1 -ResourceGroup "rg-krabs" -Location "southafricanorth"
 ```
 
 After deployment, configure Twilio WhatsApp to call:
@@ -128,16 +124,16 @@ https://<container-app-fqdn>/api/webhook
 
 ```
 src/
-  julius_application/       # FastAPI app, scheduler, health, and agent logic
-    agent/                  # AI agent core, tools (banking, knowledge, reporting)
-  julius_domain/            # Domain models and data access
+  krabs_application/       # FastAPI app, scheduler, health, and agent logic
+  krabs_agent/             # AI agent core, tools (banking, knowledge, reporting)
+  krabs_domain/            # Domain models and data access
     models/                 # Pydantic data models
     repositories/           # Cosmos DB repositories
-  julius_services/          # External service integrations
+  krabs_services/          # External service integrations
     communication/          # Twilio (WhatsApp) + Azure email
     finance/                # Investec banking API client
 infrastructure/             # Azure Bicep IaC templates
 tests/
-  julius_unit_tests/        # Unit tests (mocked dependencies)
-  julius_integration_tests/ # Integration tests (live Investec sandbox)
+  krabs_unit_tests/        # Unit tests (mocked dependencies)
+  krabs_integration_tests/ # Integration tests (live Investec sandbox)
 ```

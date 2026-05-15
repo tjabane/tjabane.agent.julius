@@ -18,7 +18,7 @@ def main() -> None:
     load_dotenv()
 
     connection_string = os.environ["COSMOS_CONNECTION_STRING"]
-    database_name = os.environ.get("COSMOS_DATABASE", "julius")
+    database_name = os.environ.get("COSMOS_DATABASE", "krabs")
 
     client = CosmosClient.from_connection_string(connection_string)
     database = client.create_database_if_not_exists(id=database_name)

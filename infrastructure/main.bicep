@@ -1,5 +1,5 @@
 @description('Base name used to derive all resource names')
-param appName string = 'julius'
+param appName string = 'krabs'
 
 @description('Azure region for all resources')
 param location string = resourceGroup().location

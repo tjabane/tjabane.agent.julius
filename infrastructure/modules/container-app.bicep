@@ -130,7 +130,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
     template: {
       containers: [
         {
-          name: 'julius'
+          name: 'krabs'
           image: containerImage
           env: concat([
             {
@@ -147,7 +147,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'COSMOS_DATABASE'
-              value: 'julius'
+              value: 'krabs'
             }
             {
               name: 'EMAIL_SENDER_ADDRESS'

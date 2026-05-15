@@ -16,7 +16,7 @@ def dummy_env(monkeypatch, request):
     monkeypatch.setenv("INVESTEC_SANDBOX", "true")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     monkeypatch.setenv("COSMOS_CONNECTION_STRING", "AccountEndpoint=https://fake.documents.azure.com:443/;AccountKey=ZmFrZWtleWZha2U=;")
-    monkeypatch.setenv("COSMOS_DATABASE", "julius")
+    monkeypatch.setenv("COSMOS_DATABASE", "krabs")
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "ACtest")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "testtoken")
     monkeypatch.setenv("TWILIO_WHATSAPP_NUMBER", "+15005550006")
