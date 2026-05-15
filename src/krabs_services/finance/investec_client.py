@@ -14,13 +14,20 @@ _DEFAULT_TIMEOUT_SECONDS = 5.0
 
 
 class InvestecClient:
-    def __init__(self, timeout: float = _DEFAULT_TIMEOUT_SECONDS):
-        self._client_id = os.environ["INVESTEC_CLIENT_ID"]
-        self._client_secret = os.environ["INVESTEC_CLIENT_SECRET"]
-        self._api_key = os.environ["INVESTEC_API_KEY"]
+    def __init__(
+        self,
+        client_id: str | None = None,
+        client_secret: str | None = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        timeout: float = _DEFAULT_TIMEOUT_SECONDS,
+    ):
+        self._client_id = client_id or os.environ["INVESTEC_CLIENT_ID"]
+        self._client_secret = client_secret or os.environ["INVESTEC_CLIENT_SECRET"]
+        self._api_key = api_key or os.environ["INVESTEC_API_KEY"]
         sandbox = os.environ.get("INVESTEC_SANDBOX", "true").lower() == "true"
         default_url = _SANDBOX_URL if sandbox else _PROD_URL
-        self._base = os.environ.get("INVESTEC_BASE_URL", default_url).rstrip("/")
+        self._base = (base_url or os.environ.get("INVESTEC_BASE_URL", default_url)).rstrip("/")
         self._timeout = timeout
         self._token: str | None = None
         self._token_expires_at: datetime = _utcnow()
