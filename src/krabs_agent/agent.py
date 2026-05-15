@@ -1,22 +1,16 @@
 from __future__ import annotations
-
 import json
 import os
 from pathlib import Path
-
 from openai import OpenAI
-
 from krabs_agent.tools import ALL_DEFINITIONS, dispatch
 from krabs_agent.tools.deps import ToolDeps
 from krabs_domain.models.agent import Message
 from krabs_domain.repositories.agent import SessionRepository
-
 _SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / "system.md").read_text()
 _MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")
-
 _client: OpenAI | None = None
 _sessions: SessionRepository | None = None
-
 
 def _get_client() -> OpenAI:
     global _client
