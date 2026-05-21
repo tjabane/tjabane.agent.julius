@@ -4,7 +4,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 
-from krabs_agent.agent import run_scheduled
+from krabs_agent.agent_runner import run_scheduled
 from krabs_domain.models.reporting import Frequency
 from krabs_domain.repositories.reporting import ScheduleRepository
 

@@ -2,7 +2,7 @@ import json
 from unittest.mock import MagicMock
 import pytest
 from krabs_domain.models.agent import Session
-from krabs_agent.agent import run, run_scheduled
+from krabs_agent.agent_runner import run, run_scheduled
 from krabs_agent.tools.deps import ToolDeps
 
 

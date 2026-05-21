@@ -36,6 +36,7 @@ class InMemoryTwilioClient:
         self.sent_messages: list[SentMessage] = []
 
     def send_message(self, to: str, body: str) -> None:
+        print(f"Simulated sending message to {to}: {body}")
         self.sent_messages.append(SentMessage(to=to, body=body))
 
 

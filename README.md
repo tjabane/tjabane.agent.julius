@@ -59,6 +59,7 @@ The FastAPI process runs a background scheduler every 5 minutes to dispatch due 
 | Runtime | FastAPI on Azure Container Apps |
 | Container Registry | Azure Container Registry |
 | AI | OpenAI |
+| Observability | Langfuse |
 | Messaging | Twilio WhatsApp |
 | Banking | Investec Private Banking API |
 | Database | Azure Cosmos DB |
@@ -76,7 +77,15 @@ Install dependencies:
 uv sync
 ```
 
-Run Azure Cosmos DB locally. On Windows, install and start the Azure Cosmos DB Emulator, then initialize the local database and containers:
+With Docker Desktop running, start the local Azure Cosmos DB emulator container:
+
+```powershell
+docker compose up -d cosmos-db
+```
+
+The Cosmos DB endpoint runs at `http://localhost:8081`, the health probe at `http://localhost:8080/ready`, and Data Explorer at `http://localhost:1234`.
+
+Initialize the local database and containers:
 
 ```powershell
 uv run python scripts\init_local_cosmos.py
@@ -88,6 +97,23 @@ Run the API locally:
 $env:SCHEDULER_ENABLED = "false"
 uv run uvicorn krabs_application.fastapi_app:app --app-dir src --reload --port 8000
 ```
+
+Iterate on the agent directly without the API:
+
+```powershell
+uv run python scripts\agent_chat.py
+uv run python scripts\agent_chat.py "show my accounts"
+```
+
+Langfuse tracing is enabled automatically when `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are present. Set `LANGFUSE_BASE_URL` for your Langfuse region or self-hosted instance, and set `LANGFUSE_TRACING_ENABLED=false` to disable tracing locally. WhatsApp identifiers are hashed before being used as Langfuse `session_id` and `user_id`; set `LANGFUSE_USER_ID_SALT` to make those hashes project-specific.
+
+Or run the API in Docker for local development:
+
+```powershell
+docker compose up --build api
+```
+
+The API container reads `.env`, overrides Cosmos DB to use the Compose service address, and exposes the app at `http://localhost:8000`.
 
 Useful endpoints:
 

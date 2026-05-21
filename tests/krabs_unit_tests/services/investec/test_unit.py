@@ -26,6 +26,24 @@ def _token_response(expires_in: int = 1800) -> MagicMock:
 
 class TestEnsureToken:
     @patch("httpx.post")
+    def test_accepts_injected_configuration(self, mock_post):
+        mock_post.return_value = _token_response()
+        client = InvestecClient(
+            client_id="injected-client-id",
+            client_secret="injected-client-secret",
+            api_key="injected-api-key",
+            base_url="https://investec.example.test/",
+            timeout=12,
+        )
+
+        client._ensure_token()
+
+        assert mock_post.call_args.args[0] == "https://investec.example.test/identity/v2/oauth2/token"
+        assert mock_post.call_args.kwargs["auth"] == ("injected-client-id", "injected-client-secret")
+        assert mock_post.call_args.kwargs["headers"]["x-api-key"] == "injected-api-key"
+        assert mock_post.call_args.kwargs["timeout"] == 12
+
+    @patch("httpx.post")
     def test_fetches_token_on_first_call(self, mock_post):
         mock_post.return_value = _token_response()
         client = InvestecClient()

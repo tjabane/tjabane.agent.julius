@@ -1,9 +1,8 @@
 from __future__ import annotations
-
 import asyncio
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Request, Response, status
-from krabs_agent.agent import run
+from krabs_agent.agent_runner import run
 from krabs_application.health import run_all as run_health_checks
 from krabs_services.communication.protocols import MessageSender
 from krabs_services.communication.providers import get_message_sender
