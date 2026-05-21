@@ -1,12 +1,13 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from krabs_agent.tools import banking, knowledge, reporting
+from krabs_agent.tools import banking, datetime, knowledge, reporting
 
 if TYPE_CHECKING:
     from krabs_agent.tools.deps import ToolDeps
 
 _RAW_DEFINITIONS = (
     banking.DEFINITIONS
+    + datetime.DEFINITIONS
     + knowledge.DEFINITIONS
     + reporting.DEFINITIONS
 )
@@ -25,6 +26,7 @@ ALL_DEFINITIONS = [
 
 _HANDLERS = {
     **{t["name"]: banking.handle for t in banking.DEFINITIONS},
+    **{t["name"]: datetime.handle for t in datetime.DEFINITIONS},
     **{t["name"]: knowledge.handle for t in knowledge.DEFINITIONS},
     **{t["name"]: reporting.handle for t in reporting.DEFINITIONS},
 }
