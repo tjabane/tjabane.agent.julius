@@ -21,22 +21,17 @@ def _create_agent():
         model=os.environ.get("OPENAI_MODEL", "gpt-5"),
         system_prompt=SYSTEM_PROMPT,
         tools=ALL_DEFINITIONS,
-        trace_name="local-agent-chat",
-        session_id="local-agent-chat",
-        tags=["agent", "local-cli"],
     )
 
 
 def main() -> int:
     load_dotenv(ROOT / ".env")
-    from krabs_agent.observability import get_langfuse_client
 
     agent = _create_agent()
 
     if len(sys.argv) > 1:
         message = " ".join(sys.argv[1:])
         print(agent.send_message(message))
-        get_langfuse_client().flush()
         return 0
 
     print("Agent chat. Type /exit to quit.")
@@ -45,13 +40,11 @@ def main() -> int:
             message = input("you> ").strip()
         except (EOFError, KeyboardInterrupt):
             print()
-            get_langfuse_client().flush()
             return 0
 
         if not message:
             continue
         if message in {"/exit", "/quit"}:
-            get_langfuse_client().flush()
             return 0
 
         print(f"agent> {agent.send_message(message)}")

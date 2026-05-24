@@ -1,9 +1,8 @@
 from __future__ import annotations
 import os
 from pathlib import Path
-from langfuse.openai import OpenAI
+from openai import OpenAI
 from krabs_agent.library.agent import Agent
-from krabs_agent.observability import stable_trace_identifier
 from krabs_agent.tools import ALL_DEFINITIONS, dispatch
 from krabs_agent.tools.deps import ToolDeps
 from krabs_domain.models.agent import Message
@@ -29,7 +28,6 @@ def run(
 ) -> str:
     sessions = sessions or _get_sessions()
     session = sessions.get_or_create(whatsapp_number)
-    trace_user_id = stable_trace_identifier(whatsapp_number)
 
     agent = Agent(
         model=_MODEL,
@@ -38,10 +36,6 @@ def run(
         messages=session.messages,
         client=client,
         tool_deps=tool_deps,
-        trace_name="whatsapp-agent-response",
-        session_id=trace_user_id,
-        user_id=trace_user_id,
-        tags=["agent", "whatsapp"],
     )
 
     reply = agent.send_message(user_message)
@@ -70,8 +64,5 @@ def run_scheduled(
         client=client,
         tool_deps=tool_deps,
         dispatch_fn=dispatch_with_schedule_id,
-        trace_name="scheduled-agent-response",
-        session_id=stable_trace_identifier(schedule_id),
-        tags=["agent", "scheduled-report"],
     )
     return agent.send_message(query)
