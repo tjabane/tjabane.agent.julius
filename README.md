@@ -98,7 +98,11 @@ $env:SCHEDULER_ENABLED = "false"
 uv run uvicorn krabs_application.fastapi_app:app --app-dir src --reload --port 8000
 ```
 
-Iterate on the agent directly without the API:
+### Local agent chat
+
+Use `scripts/agent_chat.py` to iterate on the agent directly without running the
+FastAPI webhook. It loads `.env`, uses the same system prompt and tool
+definitions as the app, and sends traces with the `local-agent-chat` session.
 
 ```powershell
 uv run python scripts\agent_chat.py
@@ -159,6 +163,9 @@ src/
     communication/          # Twilio (WhatsApp) + Azure email
     finance/                # Investec banking API client
 infrastructure/             # Azure Bicep IaC templates
+scripts/
+  agent_chat.py             # Local CLI for chatting with the agent directly
+  init_local_cosmos.py      # Initialize local Cosmos DB containers
 tests/
   krabs_unit_tests/        # Unit tests (mocked dependencies)
   krabs_integration_tests/ # Integration tests (live Investec sandbox)
