@@ -315,7 +315,6 @@ The script loads the same environment, system prompt, model, and tool definition
 - Raw API errors should be translated into plain language.
 - Transfers and beneficiary payments require confirmation before execution.
 - Reports should include clear totals, categories, and notable items.
-- Langfuse tracing is used for agent and tool observations when configured.
 - WhatsApp identifiers are hashed before being used as tracing session or user IDs.
 
 ## Current Boundaries
@@ -325,4 +324,4 @@ The script loads the same environment, system prompt, model, and tool definition
 - Scheduled report times are stored as concrete datetimes; default and recurring scheduler advancement currently use 06:00 UTC.
 - The webhook expects Twilio form fields containing a WhatsApp sender and message body.
 - Email reports are plain text.
-- The application relies on configured Investec, OpenAI, Cosmos DB, Twilio, email, and optional Langfuse environment settings.
+- The application relies on configured Investec, OpenAI, Cosmos DB, Twilio, and email environment settings.

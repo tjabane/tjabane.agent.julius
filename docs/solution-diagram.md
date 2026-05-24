@@ -13,7 +13,6 @@ flowchart TB
         investec[Investec Private Banking API]
         openai[OpenAI]
         email[Azure Communication Services Email]
-        langfuse[Langfuse<br/>optional tracing]
     end
 
     subgraph azure[Azure]
@@ -52,7 +51,6 @@ flowchart TB
     tools --> investec
     tools --> cosmos
     tools --> email
-    agent -. traces .-> langfuse
     fastapi --> twilio
     twilio --> user
 

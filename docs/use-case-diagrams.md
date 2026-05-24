@@ -24,7 +24,6 @@ flowchart LR
     investec[Investec API]
     cosmos[Cosmos DB]
     email[Azure Communication Services Email]
-    langfuse[Langfuse tracing]
 
     user --> twilio
     twilio --> webhook
@@ -32,7 +31,6 @@ flowchart LR
     agent --> investec
     agent --> cosmos
     agent --> email
-    agent -. optional tracing .-> langfuse
 
     scheduler --> agent
     scheduler --> cosmos
@@ -195,7 +193,6 @@ flowchart LR
     investec[Investec API]
     email[Email provider]
     twilio[Twilio provider]
-    langfuse[Langfuse]
 
     operator --> ping
     operator --> health
@@ -209,7 +206,6 @@ flowchart LR
     cli --> agent
     agent --> investec
     agent --> cosmos
-    agent -. optional tracing .-> langfuse
 ```
 
 ## Cross-Cutting Constraints

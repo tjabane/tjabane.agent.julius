@@ -82,7 +82,7 @@ class TestRun:
     def test_dispatches_tool_call_then_continues(self):
         mock_investec = MagicMock()
         mock_investec.get_accounts.return_value = [{"id": "1", "name": "Cheque"}]
-        deps = ToolDeps(investec=mock_investec)
+        deps = ToolDeps(banking=mock_investec)
 
         client = MagicMock()
         client.chat.completions.create.side_effect = [
@@ -99,7 +99,7 @@ class TestRun:
     def test_tool_result_appended_before_second_llm_call(self):
         mock_investec = MagicMock()
         mock_investec.get_accounts.return_value = [{"id": "abc"}]
-        deps = ToolDeps(investec=mock_investec)
+        deps = ToolDeps(banking=mock_investec)
 
         client = MagicMock()
         client.chat.completions.create.side_effect = [

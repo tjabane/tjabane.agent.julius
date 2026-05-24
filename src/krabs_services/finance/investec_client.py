@@ -51,7 +51,7 @@ class InvestecClient:
         self._token = data["access_token"]
         self._token_expires_at = _utcnow() + timedelta(seconds=data["expires_in"] - 60)
 
-    def _get(self, path: str, params: dict | None = None) -> Any:
+    def _get(self, path: str, params: dict[str, Any] | None = None) -> Any:
         self._ensure_token()
         resp = httpx.get(
             f"{self._base}{path}",
@@ -62,7 +62,7 @@ class InvestecClient:
         resp.raise_for_status()
         return resp.json().get("data", resp.json())
 
-    def _post(self, path: str, body: dict) -> Any:
+    def _post(self, path: str, body: dict[str, Any]) -> Any:
         self._ensure_token()
         resp = httpx.post(
             f"{self._base}{path}",
@@ -73,13 +73,20 @@ class InvestecClient:
         resp.raise_for_status()
         return resp.json().get("data", resp.json())
 
-    def get_accounts(self) -> list[dict]:
+    def get_accounts(self) -> list[dict[str, Any]]:
         return self._get("/za/pb/v1/accounts").get("accounts", [])
 
-    def get_balance(self, account_id: str) -> dict:
+    def get_balance(self, account_id: str) -> dict[str, Any]:
         return self._get(f"/za/pb/v1/accounts/{account_id}/balance")
 
-    def get_transactions(self, account_id: str, from_date: str | None = None, to_date: str | None = None, transaction_type: str | None = None, include_pending: bool = False) -> list[dict]:
+    def get_transactions(
+        self,
+        account_id: str,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        transaction_type: str | None = None,
+        include_pending: bool = False,
+    ) -> list[dict[str, Any]]:
         params = {"includePending": str(include_pending).lower()}
         if from_date:
             params["fromDate"] = from_date
@@ -89,25 +96,30 @@ class InvestecClient:
             params["transactionType"] = transaction_type
         return self._get(f"/za/pb/v1/accounts/{account_id}/transactions", params).get("transactions", [])
 
-    def get_pending_transactions(self, account_id: str) -> list[dict]:
+    def get_pending_transactions(self, account_id: str) -> list[dict[str, Any]]:
         return self._get(f"/za/pb/v1/accounts/{account_id}/pending-transactions").get("transactions", [])
 
-    def transfer_funds(self, account_id: str, transfers: list[dict], profile_id: str | None = None) -> list[dict]:
-        body: dict = {"transferList": transfers}
+    def transfer_funds(
+        self,
+        account_id: str,
+        transfers: list[dict[str, Any]],
+        profile_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        body: dict[str, Any] = {"transferList": transfers}
         if profile_id:
             body["profileId"] = profile_id
         return self._post(f"/za/pb/v1/accounts/{account_id}/transfermultiple", body).get("TransferResponses", [])
 
-    def get_beneficiaries(self) -> list[dict]:
+    def get_beneficiaries(self) -> list[dict[str, Any]]:
         return self._get("/za/pb/v1/accounts/beneficiaries")
 
-    def get_beneficiary_categories(self) -> list[dict]:
+    def get_beneficiary_categories(self) -> list[dict[str, Any]]:
         return self._get("/za/pb/v1/accounts/beneficiarycategories")
 
-    def pay_beneficiaries(self, account_id: str, payments: list[dict]) -> list[dict]:
+    def pay_beneficiaries(self, account_id: str, payments: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return self._post(f"/za/pb/v1/accounts/{account_id}/paymultiple", {"paymentList": payments}).get("TransferResponses", [])
 
-    def get_documents(self, account_id: str, from_date: str, to_date: str) -> list[dict]:
+    def get_documents(self, account_id: str, from_date: str, to_date: str) -> list[dict[str, Any]]:
         result = self._get(f"/za/pb/v1/accounts/{account_id}/documents", {"fromDate": from_date, "toDate": to_date})
         return result if isinstance(result, list) else result.get("data", [])
 

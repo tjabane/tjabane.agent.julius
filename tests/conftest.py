@@ -15,7 +15,6 @@ def dummy_env(monkeypatch, request):
     monkeypatch.setenv("INVESTEC_API_KEY", "test-api-key")
     monkeypatch.setenv("INVESTEC_SANDBOX", "true")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    monkeypatch.setenv("LANGFUSE_TRACING_ENABLED", "false")
     monkeypatch.setenv("COSMOS_CONNECTION_STRING", "AccountEndpoint=https://fake.documents.azure.com:443/;AccountKey=ZmFrZWtleWZha2U=;")
     monkeypatch.setenv("COSMOS_DATABASE", "krabs")
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "ACtest")

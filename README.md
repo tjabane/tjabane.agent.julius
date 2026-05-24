@@ -59,7 +59,6 @@ The FastAPI process runs a background scheduler every 5 minutes to dispatch due 
 | Runtime | FastAPI on Azure Container Apps |
 | Container Registry | Azure Container Registry |
 | AI | OpenAI |
-| Observability | Langfuse |
 | Messaging | Twilio WhatsApp |
 | Banking | Investec Private Banking API |
 | Database | Azure Cosmos DB |
@@ -108,8 +107,6 @@ definitions as the app, and sends traces with the `local-agent-chat` session.
 uv run python scripts\agent_chat.py
 uv run python scripts\agent_chat.py "show my accounts"
 ```
-
-Langfuse tracing is enabled automatically when `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are present. Set `LANGFUSE_BASE_URL` for your Langfuse region or self-hosted instance, and set `LANGFUSE_TRACING_ENABLED=false` to disable tracing locally. WhatsApp identifiers are hashed before being used as Langfuse `session_id` and `user_id`; set `LANGFUSE_USER_ID_SALT` to make those hashes project-specific.
 
 Or run the API in Docker for local development:
 
