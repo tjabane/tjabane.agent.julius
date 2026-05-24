@@ -76,6 +76,27 @@ class TestBankingTools:
             include_pending=False,
         )
 
+    def test_get_transactions_accepts_api_style_parameter_names(self):
+        mock_investec = MagicMock()
+        mock_investec.get_transactions.return_value = []
+        deps = ToolDeps(investec=mock_investec)
+
+        dispatch("get_transactions", {
+            "accountId": "acc-1",
+            "fromDate": "2024-01-01",
+            "toDate": "2024-01-31",
+            "transactionType": "CardPurchases",
+            "includePending": "true",
+        }, deps)
+
+        mock_investec.get_transactions.assert_called_once_with(
+            "acc-1",
+            from_date="2024-01-01",
+            to_date="2024-01-31",
+            transaction_type="CardPurchases",
+            include_pending=True,
+        )
+
     def test_get_beneficiaries(self):
         mock_investec = MagicMock()
         mock_investec.get_beneficiaries.return_value = [{"beneficiaryId": "b1"}]

@@ -18,7 +18,7 @@ def _create_agent():
     from krabs_agent.tools import ALL_DEFINITIONS
 
     return Agent(
-        model=os.environ.get("OPENAI_MODEL", "gpt-4o"),
+        model=os.environ.get("OPENAI_MODEL", "gpt-5"),
         system_prompt=SYSTEM_PROMPT,
         tools=ALL_DEFINITIONS,
         trace_name="local-agent-chat",

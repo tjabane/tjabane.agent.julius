@@ -15,6 +15,23 @@ def _get_investec() -> InvestecClient:
     return _investec
 
 
+def _first_present(inputs: dict, *keys: str):
+    for key in keys:
+        if key in inputs:
+            return inputs[key]
+    return None
+
+
+def _bool_input(value, default: bool = False) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "y"}
+    return bool(value)
+
+
 DEFINITIONS = [
     {
         "name": "get_accounts",
@@ -123,15 +140,21 @@ def handle(tool_name: str, inputs: dict, deps: ToolDeps | None = None) -> str:
         return str(investec.get_accounts())
 
     if tool_name == "get_balance":
-        return str(investec.get_balance(inputs["account_id"]))
+        return str(investec.get_balance(_first_present(inputs, "account_id", "accountId")))
 
     if tool_name == "get_transactions":
+        account_id = _first_present(inputs, "account_id", "accountId")
+        from_date = _first_present(inputs, "from_date", "fromDate")
+        to_date = _first_present(inputs, "to_date", "toDate")
+        transaction_type = _first_present(inputs, "transaction_type", "transactionType")
+        include_pending = _bool_input(_first_present(inputs, "include_pending", "includePending"), False)
+
         return str(investec.get_transactions(
-            inputs["account_id"],
-            from_date=inputs.get("from_date"),
-            to_date=inputs.get("to_date"),
-            transaction_type=inputs.get("transaction_type"),
-            include_pending=inputs.get("include_pending", False),
+            account_id,
+            from_date=from_date,
+            to_date=to_date,
+            transaction_type=transaction_type,
+            include_pending=include_pending,
         ))
 
     if tool_name == "transfer_funds":
