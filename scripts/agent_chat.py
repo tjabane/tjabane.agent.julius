@@ -14,13 +14,13 @@ SYSTEM_PROMPT = (SRC / "krabs_agent" / "prompts" / "system.md").read_text()
 
 
 def _create_agent():
+    from openai import OpenAI
     from krabs_agent.library.agent import Agent
-    from krabs_agent.tools import ALL_DEFINITIONS
 
     return Agent(
         model=os.environ.get("OPENAI_MODEL", "gpt-5"),
         system_prompt=SYSTEM_PROMPT,
-        tools=ALL_DEFINITIONS,
+        client=OpenAI(),
     )
 
 

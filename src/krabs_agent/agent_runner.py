@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 from openai import OpenAI
 from krabs_agent.library.agent import Agent
-from krabs_agent.tools import ALL_DEFINITIONS, dispatch
 from krabs_agent.tools.deps import ToolDeps
 from krabs_domain.models.agent import Message
 from krabs_domain.repositories.agent import SessionRepository
@@ -26,16 +25,16 @@ def run(
     sessions: SessionRepository | None = None,
     tool_deps: ToolDeps | None = None,
 ) -> str:
+    _ = tool_deps
+    client = client or OpenAI()
     sessions = sessions or _get_sessions()
     session = sessions.get_or_create(whatsapp_number)
 
     agent = Agent(
         model=_MODEL,
         system_prompt=_SYSTEM_PROMPT,
-        tools=ALL_DEFINITIONS,
         messages=session.messages,
         client=client,
-        tool_deps=tool_deps,
     )
 
     reply = agent.send_message(user_message)
@@ -52,17 +51,12 @@ def run_scheduled(
     client: OpenAI | None = None,
     tool_deps: ToolDeps | None = None,
 ) -> str:
-    def dispatch_with_schedule_id(name: str, inputs: dict, deps: ToolDeps | None = None) -> str:
-        if name == "send_email":
-            inputs["schedule_id"] = schedule_id
-        return dispatch(name, inputs, deps)
+    _ = (schedule_id, tool_deps)
+    client = client or OpenAI()
 
     agent = Agent(
         model=_MODEL,
         system_prompt=_SYSTEM_PROMPT,
-        tools=ALL_DEFINITIONS,
         client=client,
-        tool_deps=tool_deps,
-        dispatch_fn=dispatch_with_schedule_id,
     )
     return agent.send_message(query)
