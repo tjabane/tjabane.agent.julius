@@ -3,9 +3,10 @@ from __future__ import annotations
 import logging
 import os
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from typing import Callable, Literal
+from typing import Literal
 
 import httpx
 from azure.communication.email import EmailClient
@@ -18,7 +19,7 @@ from krabs_services.communication.providers import (
     get_report_sender,
     use_in_memory_communication,
 )
-from krabs_services.finance.investec_client import InvestecClient
+from krabs_services.finance.investec_client import InvestecClient, get_investec_base_url
 
 _TIMEOUT_SECONDS = 5.0
 
@@ -103,9 +104,7 @@ def _check_acs_email_config() -> None:
 
 
 def _check_investec_reachable() -> None:
-    sandbox = os.environ.get("INVESTEC_SANDBOX", "true").lower() == "true"
-    default_base = "https://openapisandbox.investec.com" if sandbox else "https://openapi.investec.com"
-    base = os.environ.get("INVESTEC_BASE_URL", default_base).rstrip("/")
+    base = (os.environ.get("INVESTEC_BASE_URL") or get_investec_base_url()).rstrip("/")
     response = httpx.get(base, timeout=_TIMEOUT_SECONDS)
     try:
         response.raise_for_status()

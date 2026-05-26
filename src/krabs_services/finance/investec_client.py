@@ -1,16 +1,21 @@
-from datetime import datetime, timedelta, timezone
-from typing import Any
-import httpx
 import os
+import httpx
+from typing import Any
+from datetime import UTC, datetime, timedelta
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
-_SANDBOX_URL = "https://openapisandbox.investec.com"
-_PROD_URL = "https://openapi.investec.com"
-_DEFAULT_TIMEOUT_SECONDS = 5.0
+def get_investec_base_url() -> str:
+    sandbox = os.environ.get("INVESTEC_SANDBOX", "true").lower() == "true"
+    default_url_key = "INVESTEC_SANDBOX_URL" if sandbox else "INVESTEC_PROD_URL"
+    return os.environ[default_url_key].rstrip("/")
+
+
+def get_investec_timeout_seconds() -> float:
+    return float(os.environ["INVESTEC_TIMEOUT_SECONDS"])
 
 
 class InvestecClient:
@@ -20,15 +25,13 @@ class InvestecClient:
         client_secret: str | None = None,
         api_key: str | None = None,
         base_url: str | None = None,
-        timeout: float = _DEFAULT_TIMEOUT_SECONDS,
+        timeout: float | None = None,
     ):
         self._client_id = client_id or os.environ["INVESTEC_CLIENT_ID"]
         self._client_secret = client_secret or os.environ["INVESTEC_CLIENT_SECRET"]
         self._api_key = api_key or os.environ["INVESTEC_API_KEY"]
-        sandbox = os.environ.get("INVESTEC_SANDBOX", "true").lower() == "true"
-        default_url = _SANDBOX_URL if sandbox else _PROD_URL
-        self._base = (base_url or os.environ.get("INVESTEC_BASE_URL", default_url)).rstrip("/")
-        self._timeout = timeout
+        self._base = (base_url or os.environ.get("INVESTEC_BASE_URL") or get_investec_base_url()).rstrip("/")
+        self._timeout = timeout if timeout is not None else get_investec_timeout_seconds()
         self._token: str | None = None
         self._token_expires_at: datetime = _utcnow()
 
