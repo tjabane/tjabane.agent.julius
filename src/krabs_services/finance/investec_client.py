@@ -1,7 +1,8 @@
 import os
-import httpx
-from typing import Any
 from datetime import UTC, datetime, timedelta
+from typing import Any
+
+import httpx
 
 
 def _utcnow() -> datetime:
@@ -18,25 +19,22 @@ def get_investec_timeout_seconds() -> float:
     return float(os.environ["INVESTEC_TIMEOUT_SECONDS"])
 
 
-class InvestecClient:
+class InvestecHttpClient:
     def __init__(
         self,
-        client_id: str | None = None,
-        client_secret: str | None = None,
-        api_key: str | None = None,
-        base_url: str | None = None,
-        timeout: float | None = None,
+        client_id: str,
+        client_secret: str,
+        api_key: str,
+        base_url: str,
+        timeout: float,
     ):
-        self._client_id = client_id or os.environ["INVESTEC_CLIENT_ID"]
-        self._client_secret = client_secret or os.environ["INVESTEC_CLIENT_SECRET"]
-        self._api_key = api_key or os.environ["INVESTEC_API_KEY"]
-        self._base = (base_url or os.environ.get("INVESTEC_BASE_URL") or get_investec_base_url()).rstrip("/")
-        self._timeout = timeout if timeout is not None else get_investec_timeout_seconds()
+        self._client_id = client_id
+        self._client_secret = client_secret
+        self._api_key = api_key
+        self._base = base_url.rstrip("/")
+        self._timeout = timeout
         self._token: str | None = None
         self._token_expires_at: datetime = _utcnow()
-
-    def check_auth(self) -> None:
-        self._ensure_token()
 
     def _ensure_token(self) -> None:
         if self._token and _utcnow() < self._token_expires_at:
@@ -44,7 +42,10 @@ class InvestecClient:
         url = f"{self._base}/identity/v2/oauth2/token"
         resp = httpx.post(
             url,
-            data={"grant_type": "client_credentials", "scope": "accounts balances transactions transfers beneficiarypayments documents.statements documents.taxcertificates"},
+            data={
+                "grant_type": "client_credentials",
+                "scope": "accounts balances transactions transfers beneficiarypayments documents.statements documents.taxcertificates",
+            },
             auth=(self._client_id, self._client_secret),
             headers={"x-api-key": self._api_key},
             timeout=self._timeout,
@@ -63,7 +64,8 @@ class InvestecClient:
             timeout=self._timeout,
         )
         resp.raise_for_status()
-        return resp.json().get("data", resp.json())
+        response_body = resp.json()
+        return response_body.get("data", response_body)
 
     def _post(self, path: str, body: dict[str, Any]) -> Any:
         self._ensure_token()
@@ -74,13 +76,19 @@ class InvestecClient:
             timeout=self._timeout,
         )
         resp.raise_for_status()
-        return resp.json().get("data", resp.json())
+        response_body = resp.json()
+        return response_body.get("data", response_body)
+
+
+class InvestecAccountsClient:
+    def __init__(self, http_client: InvestecHttpClient):
+        self._http_client = http_client
 
     def get_accounts(self) -> list[dict[str, Any]]:
-        return self._get("/za/pb/v1/accounts").get("accounts", [])
+        return self._http_client._get("/za/pb/v1/accounts").get("accounts", [])
 
     def get_balance(self, account_id: str) -> dict[str, Any]:
-        return self._get(f"/za/pb/v1/accounts/{account_id}/balance")
+        return self._http_client._get(f"/za/pb/v1/accounts/{account_id}/balance")
 
     def get_transactions(
         self,
@@ -97,10 +105,15 @@ class InvestecClient:
             params["toDate"] = to_date
         if transaction_type:
             params["transactionType"] = transaction_type
-        return self._get(f"/za/pb/v1/accounts/{account_id}/transactions", params).get("transactions", [])
+        return self._http_client._get(f"/za/pb/v1/accounts/{account_id}/transactions", params).get("transactions", [])
 
     def get_pending_transactions(self, account_id: str) -> list[dict[str, Any]]:
-        return self._get(f"/za/pb/v1/accounts/{account_id}/pending-transactions").get("transactions", [])
+        return self._http_client._get(f"/za/pb/v1/accounts/{account_id}/pending-transactions").get("transactions", [])
+
+
+class InvestecPaymentsClient:
+    def __init__(self, http_client: InvestecHttpClient):
+        self._http_client = http_client
 
     def transfer_funds(
         self,
@@ -111,20 +124,109 @@ class InvestecClient:
         body: dict[str, Any] = {"transferList": transfers}
         if profile_id:
             body["profileId"] = profile_id
-        return self._post(f"/za/pb/v1/accounts/{account_id}/transfermultiple", body).get("TransferResponses", [])
+        return self._http_client._post(f"/za/pb/v1/accounts/{account_id}/transfermultiple", body).get(
+            "TransferResponses", []
+        )
 
     def get_beneficiaries(self) -> list[dict[str, Any]]:
-        return self._get("/za/pb/v1/accounts/beneficiaries")
+        return self._http_client._get("/za/pb/v1/accounts/beneficiaries")
 
     def get_beneficiary_categories(self) -> list[dict[str, Any]]:
-        return self._get("/za/pb/v1/accounts/beneficiarycategories")
+        return self._http_client._get("/za/pb/v1/accounts/beneficiarycategories")
 
     def pay_beneficiaries(self, account_id: str, payments: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        return self._post(f"/za/pb/v1/accounts/{account_id}/paymultiple", {"paymentList": payments}).get("TransferResponses", [])
+        return self._http_client._post(f"/za/pb/v1/accounts/{account_id}/paymultiple", {"paymentList": payments}).get(
+            "TransferResponses", []
+        )
+
+
+class InvestecDocumentsClient:
+    def __init__(self, http_client: InvestecHttpClient):
+        self._http_client = http_client
 
     def get_documents(self, account_id: str, from_date: str, to_date: str) -> list[dict[str, Any]]:
-        result = self._get(f"/za/pb/v1/accounts/{account_id}/documents", {"fromDate": from_date, "toDate": to_date})
+        result = self._http_client._get(
+            f"/za/pb/v1/accounts/{account_id}/documents", {"fromDate": from_date, "toDate": to_date}
+        )
         return result if isinstance(result, list) else result.get("data", [])
 
     def get_document(self, account_id: str, document_type: str, document_date: str) -> Any:
-        return self._get(f"/za/pb/v1/accounts/{account_id}/document/{document_type}/{document_date}")
+        return self._http_client._get(f"/za/pb/v1/accounts/{account_id}/document/{document_type}/{document_date}")
+
+
+class InvestecClient:
+    def __init__(
+        self,
+        client_id: str | None = None,
+        client_secret: str | None = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        timeout: float | None = None,
+        http_client: InvestecHttpClient | None = None,
+    ):
+        client_id = client_id or os.environ["INVESTEC_CLIENT_ID"]
+        client_secret = client_secret or os.environ["INVESTEC_CLIENT_SECRET"]
+        api_key = api_key or os.environ["INVESTEC_API_KEY"]
+        base_url = base_url or os.environ.get("INVESTEC_BASE_URL") or get_investec_base_url()
+        timeout = timeout if timeout is not None else get_investec_timeout_seconds()
+        self._http_client = http_client or InvestecHttpClient(
+            client_id=client_id,
+            client_secret=client_secret,
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+        )
+        self.accounts = InvestecAccountsClient(self._http_client)
+        self.payments = InvestecPaymentsClient(self._http_client)
+        self.documents = InvestecDocumentsClient(self._http_client)
+
+    def check_auth(self) -> None:
+        self._http_client._ensure_token()
+
+    def get_accounts(self) -> list[dict[str, Any]]:
+        return self.accounts.get_accounts()
+
+    def get_balance(self, account_id: str) -> dict[str, Any]:
+        return self.accounts.get_balance(account_id)
+
+    def get_transactions(
+        self,
+        account_id: str,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        transaction_type: str | None = None,
+        include_pending: bool = False,
+    ) -> list[dict[str, Any]]:
+        return self.accounts.get_transactions(
+            account_id=account_id,
+            from_date=from_date,
+            to_date=to_date,
+            transaction_type=transaction_type,
+            include_pending=include_pending,
+        )
+
+    def get_pending_transactions(self, account_id: str) -> list[dict[str, Any]]:
+        return self.accounts.get_pending_transactions(account_id)
+
+    def transfer_funds(
+        self,
+        account_id: str,
+        transfers: list[dict[str, Any]],
+        profile_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        return self.payments.transfer_funds(account_id, transfers, profile_id)
+
+    def get_beneficiaries(self) -> list[dict[str, Any]]:
+        return self.payments.get_beneficiaries()
+
+    def get_beneficiary_categories(self) -> list[dict[str, Any]]:
+        return self.payments.get_beneficiary_categories()
+
+    def pay_beneficiaries(self, account_id: str, payments: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return self.payments.pay_beneficiaries(account_id, payments)
+
+    def get_documents(self, account_id: str, from_date: str, to_date: str) -> list[dict[str, Any]]:
+        return self.documents.get_documents(account_id, from_date, to_date)
+
+    def get_document(self, account_id: str, document_type: str, document_date: str) -> Any:
+        return self.documents.get_document(account_id, document_type, document_date)
