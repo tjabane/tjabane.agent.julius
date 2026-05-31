@@ -15,12 +15,29 @@ SYSTEM_PROMPT = (SRC / "krabs_agent" / "prompts" / "system.md").read_text()
 
 def _create_agent():
     from openai import OpenAI
+
     from krabs_agent.library.agent import Agent
+    from krabs_agent.library.tools import ToolRegistry
+    from krabs_services.finance.investec_client import InvestecClient
+    from krabs_tools.tools import (
+        GetAccountsTool,
+        GetBalanceTool,
+        GetPendingTransactionsTool,
+        GetTransactionsTool,
+    )
+
+    investec_client = InvestecClient()
+    tool_registry = ToolRegistry()
+    tool_registry.register(GetAccountsTool(investec_client.accounts))
+    tool_registry.register(GetBalanceTool(investec_client.accounts))
+    tool_registry.register(GetTransactionsTool(investec_client.accounts))
+    tool_registry.register(GetPendingTransactionsTool(investec_client.accounts))
 
     return Agent(
         model=os.environ.get("OPENAI_MODEL", "gpt-5"),
         system_prompt=SYSTEM_PROMPT,
         client=OpenAI(),
+        tool_registry=tool_registry,
     )
 
 
