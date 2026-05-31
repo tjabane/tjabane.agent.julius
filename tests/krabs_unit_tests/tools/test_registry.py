@@ -37,6 +37,19 @@ class TestToolRegistry:
         with pytest.raises(ValueError, match="Duplicate tool: example_tool"):
             registry.register(ExampleTool())
 
+    def test_register_many_registers_tools(self):
+        registry = ToolRegistry()
+
+        registry.register_many([ExampleTool()])
+
+        assert registry.get("example_tool").name == "example_tool"
+
+    def test_register_many_rejects_duplicate_tool_names(self):
+        registry = ToolRegistry()
+
+        with pytest.raises(ValueError, match="Duplicate tool: example_tool"):
+            registry.register_many([ExampleTool(), ExampleTool()])
+
     def test_get_model_tools_returns_openai_function_schema(self):
         registry = ToolRegistry()
         registry.register(ExampleTool())

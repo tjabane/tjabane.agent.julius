@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import Any
+from typing import Any, cast
 
 from openai import OpenAI
 
@@ -75,7 +75,7 @@ class Agent:
                 model=self.model,
                 input=tool_outputs,
                 previous_response_id=response.id,
-                tools=tools,
+                tools=cast(Any, tools),
             )
 
         reply = response.output_text or ""

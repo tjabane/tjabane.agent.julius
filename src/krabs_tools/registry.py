@@ -1,16 +1,22 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import Any, Protocol
 
 from pydantic import BaseModel
 
 
 class Tool(Protocol):
-    name: str
-    description: str
-    input_schema: type[BaseModel]
+    @property
+    def name(self) -> str: ...
 
-    async def run(self, input_data: BaseModel) -> Any: ...
+    @property
+    def description(self) -> str: ...
+
+    @property
+    def input_schema(self) -> type[BaseModel]: ...
+
+    async def run(self, input_data: Any) -> Any: ...
 
 
 class ToolRegistry:
@@ -30,6 +36,10 @@ class ToolRegistry:
         if tool.name in self._tools:
             raise ValueError(f"Duplicate tool: {tool.name}")
         self._tools[tool.name] = tool
+
+    def register_many(self, tools: Iterable[Tool]) -> None:
+        for tool in tools:
+            self.register(tool)
 
     def get_model_tools(self) -> list[dict[str, Any]]:
         return [self._to_model_tool(tool) for tool in self._tools.values()]

@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from pydantic import BaseModel, ConfigDict
 
@@ -117,6 +117,18 @@ class TestRun:
 
         assert reply == "Done."
 
+    @patch("krabs_agent.agent_runner.Agent")
+    def test_passes_tool_registry_to_agent(self, agent_class):
+        client = MagicMock()
+        sessions = FakeSessions()
+        agent = MagicMock()
+        agent.send_message.return_value = "Done."
+        agent_class.return_value = agent
+
+        run("+27831234567", "hello", client=client, sessions=sessions)
+
+        assert agent_class.call_args.kwargs["tool_registry"] is not None
+
 
 class TestAgentToolRegistry:
     def test_dispatches_tool_call_then_continues(self):
@@ -187,3 +199,14 @@ class TestRunScheduled:
 
         request = client.responses.create.call_args.kwargs
         assert request["input"][-1] == {"role": "user", "content": "send report"}
+
+    @patch("krabs_agent.agent_runner.Agent")
+    def test_passes_tool_registry_to_scheduled_agent(self, agent_class):
+        client = MagicMock()
+        agent = MagicMock()
+        agent.send_message.return_value = "Done."
+        agent_class.return_value = agent
+
+        run_scheduled("sched-1", "send report", client=client)
+
+        assert agent_class.call_args.kwargs["tool_registry"] is not None

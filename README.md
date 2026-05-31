@@ -50,6 +50,8 @@ Twilio  --->  Azure Container Apps (FastAPI webhook)
 
 The FastAPI process runs a background scheduler every 5 minutes to dispatch due scheduled reports. The Container App is configured with one replica by default so scheduled reports are not processed twice.
 
+The agent uses OpenAI's Responses API with a `ToolRegistry`. Investec banking tools live in `krabs_tools`, where Pydantic schemas define the model-facing contract and grouped factory functions compose account, document, and payment tools from an injected `InvestecClient`. Both the webhook runner and `scripts/agent_chat.py` use the same factory path so local testing and deployed behavior stay aligned.
+
 ---
 
 ## Tech Stack
@@ -152,13 +154,14 @@ https://<container-app-fqdn>/api/webhook
 ```
 src/
   krabs_application/       # FastAPI app, scheduler, health, and agent logic
-  krabs_agent/             # AI agent core, tools (banking, knowledge, reporting)
+  krabs_agent/             # AI agent core, runner, and legacy non-Investec tools
   krabs_domain/            # Domain models and data access
     models/                 # Pydantic data models
     repositories/           # Cosmos DB repositories
   krabs_services/          # External service integrations
     communication/          # Twilio (WhatsApp) + Azure email
     finance/                # Investec banking API client
+  krabs_tools/             # Responses API tool registry, schemas, adapters, factories
 infrastructure/             # Azure Bicep IaC templates
 scripts/
   agent_chat.py             # Local CLI for chatting with the agent directly

@@ -305,7 +305,7 @@ or:
 uv run python scripts\agent_chat.py "show my accounts"
 ```
 
-The script loads the same environment, system prompt, model, and tool definitions used by the deployed app. This lets developers iterate on banking, reporting, memory, and scheduling behavior before exposing changes through the webhook.
+The script loads the same environment, system prompt, model, and Investec tool factory path used by the deployed app. This lets developers iterate on banking, reporting, memory, and scheduling behavior before exposing changes through the webhook.
 
 ## Cross-Cutting Rules
 
@@ -316,6 +316,7 @@ The script loads the same environment, system prompt, model, and tool definition
 - Transfers and beneficiary payments require confirmation before execution.
 - Reports should include clear totals, categories, and notable items.
 - WhatsApp identifiers are hashed before being used as tracing session or user IDs.
+- Investec tool adapters should be registered through grouped factory functions so the app runner and local agent chat stay consistent.
 
 ## Current Boundaries
 

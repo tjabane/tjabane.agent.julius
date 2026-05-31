@@ -1,20 +1,39 @@
 from __future__ import annotations
+
 import os
 from pathlib import Path
+
 from openai import OpenAI
+
 from krabs_agent.library.agent import Agent
 from krabs_agent.tools.deps import ToolDeps
 from krabs_domain.models.agent import Message
 from krabs_domain.repositories.agent import SessionRepository
+from krabs_services.finance.investec_client import InvestecClient
+from krabs_tools.registry import ToolRegistry
+from krabs_tools.tools import create_investec_tools
+
 _SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / "system.md").read_text()
 _MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")
 _sessions: SessionRepository | None = None
+_tool_registry: ToolRegistry | None = None
+
 
 def _get_sessions() -> SessionRepository:
     global _sessions
     if _sessions is None:
         _sessions = SessionRepository()
     return _sessions
+
+
+def _get_tool_registry() -> ToolRegistry:
+    global _tool_registry
+    if _tool_registry is None:
+        investec_client = InvestecClient()
+        registry = ToolRegistry()
+        registry.register_many(create_investec_tools(investec_client))
+        _tool_registry = registry
+    return _tool_registry
 
 
 def run(
@@ -35,6 +54,7 @@ def run(
         system_prompt=_SYSTEM_PROMPT,
         messages=session.messages,
         client=client,
+        tool_registry=_get_tool_registry(),
     )
 
     reply = agent.send_message(user_message)
@@ -58,5 +78,6 @@ def run_scheduled(
         model=_MODEL,
         system_prompt=_SYSTEM_PROMPT,
         client=client,
+        tool_registry=_get_tool_registry(),
     )
     return agent.send_message(query)

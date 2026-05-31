@@ -19,33 +19,11 @@ def _create_agent():
     from krabs_agent.library.agent import Agent
     from krabs_services.finance.investec_client import InvestecClient
     from krabs_tools.registry import ToolRegistry
-    from krabs_tools.tools import (
-        GetAccountsTool,
-        GetBalanceTool,
-        GetBeneficiariesTool,
-        GetBeneficiaryCategoriesTool,
-        GetBulkBalancesTool,
-        GetDocumentsTool,
-        GetDocumentTool,
-        GetPendingTransactionsTool,
-        GetTransactionsTool,
-        PayBeneficiariesTool,
-        TransferFundsTool,
-    )
+    from krabs_tools.tools import create_investec_tools
 
     investec_client = InvestecClient()
     tool_registry = ToolRegistry()
-    tool_registry.register(GetAccountsTool(investec_client.accounts))
-    tool_registry.register(GetBulkBalancesTool(investec_client.accounts))
-    tool_registry.register(GetBalanceTool(investec_client.accounts))
-    tool_registry.register(GetTransactionsTool(investec_client.accounts))
-    tool_registry.register(GetPendingTransactionsTool(investec_client.accounts))
-    tool_registry.register(GetBeneficiariesTool(investec_client.payments))
-    tool_registry.register(GetBeneficiaryCategoriesTool(investec_client.payments))
-    tool_registry.register(TransferFundsTool(investec_client.payments))
-    tool_registry.register(PayBeneficiariesTool(investec_client.payments))
-    tool_registry.register(GetDocumentsTool(investec_client.documents))
-    tool_registry.register(GetDocumentTool(investec_client.documents))
+    tool_registry.register_many(create_investec_tools(investec_client))
 
     return Agent(
         model=os.environ.get("OPENAI_MODEL", "gpt-5"),
