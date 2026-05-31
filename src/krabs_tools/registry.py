@@ -10,8 +10,7 @@ class Tool(Protocol):
     description: str
     input_schema: type[BaseModel]
 
-    async def run(self, input_data: BaseModel) -> Any:
-        raise NotImplementedError()
+    async def run(self, input_data: BaseModel) -> Any: ...
 
 
 class ToolRegistry:
