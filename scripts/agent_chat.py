@@ -17,14 +17,20 @@ def _create_agent():
     from openai import OpenAI
 
     from krabs_agent.library.agent import Agent
-    from krabs_agent.library.tools import ToolRegistry
     from krabs_services.finance.investec_client import InvestecClient
+    from krabs_tools.registry import ToolRegistry
     from krabs_tools.tools import (
         GetAccountsTool,
         GetBalanceTool,
+        GetBeneficiariesTool,
+        GetBeneficiaryCategoriesTool,
         GetBulkBalancesTool,
+        GetDocumentsTool,
+        GetDocumentTool,
         GetPendingTransactionsTool,
         GetTransactionsTool,
+        PayBeneficiariesTool,
+        TransferFundsTool,
     )
 
     investec_client = InvestecClient()
@@ -34,6 +40,12 @@ def _create_agent():
     tool_registry.register(GetBalanceTool(investec_client.accounts))
     tool_registry.register(GetTransactionsTool(investec_client.accounts))
     tool_registry.register(GetPendingTransactionsTool(investec_client.accounts))
+    tool_registry.register(GetBeneficiariesTool(investec_client.payments))
+    tool_registry.register(GetBeneficiaryCategoriesTool(investec_client.payments))
+    tool_registry.register(TransferFundsTool(investec_client.payments))
+    tool_registry.register(PayBeneficiariesTool(investec_client.payments))
+    tool_registry.register(GetDocumentsTool(investec_client.documents))
+    tool_registry.register(GetDocumentTool(investec_client.documents))
 
     return Agent(
         model=os.environ.get("OPENAI_MODEL", "gpt-5"),

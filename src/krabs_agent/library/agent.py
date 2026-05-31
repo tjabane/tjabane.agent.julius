@@ -6,8 +6,8 @@ from typing import Any
 
 from openai import OpenAI
 
-from krabs_agent.library.tools import ToolRegistry
 from krabs_domain.models.agent import Message
+from krabs_tools.registry import ToolRegistry
 
 
 def _message_to_dict(message: Message) -> dict[str, str]:
