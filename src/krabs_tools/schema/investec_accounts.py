@@ -11,6 +11,12 @@ class GetBalanceInput(BaseModel):
     account_id: str = Field(min_length=1)
 
 
+class GetBulkBalancesInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    account_ids: list[str] = Field(min_length=1)
+
+
 class GetTransactionsInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

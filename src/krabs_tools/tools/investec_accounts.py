@@ -1,9 +1,11 @@
+import asyncio
 from typing import Any
 
 from krabs_services.finance.investec_client import InvestecAccountsClient
 from krabs_tools.schema.investec_accounts import (
     GetAccountsInput,
     GetBalanceInput,
+    GetBulkBalancesInput,
     GetPendingTransactionsInput,
     GetTransactionsInput,
 )
@@ -24,7 +26,7 @@ class GetAccountsTool:
 
 class GetBalanceTool:
     name = "get_balance"
-    description = "Get the current and available balance for an Investec account."
+    description = "Get the current and available balance for exactly one Investec account. Use get_bulk_balances instead when balances are needed for multiple accounts."
     input_schema = GetBalanceInput
 
     def __init__(self, accounts_client: InvestecAccountsClient) -> None:
@@ -32,6 +34,23 @@ class GetBalanceTool:
 
     async def run(self, input_data: GetBalanceInput) -> dict[str, Any]:
         return self._accounts_client.get_balance(input_data.account_id)
+
+
+class GetBulkBalancesTool:
+    name = "get_bulk_balances"
+    description = "Get the current and available balances for multiple Investec accounts in one grouped call. Use this instead of calling get_balance repeatedly when the user asks for balances for all accounts or more than one account."
+    input_schema = GetBulkBalancesInput
+
+    def __init__(self, accounts_client: InvestecAccountsClient) -> None:
+        self._accounts_client = accounts_client
+
+    async def run(self, input_data: GetBulkBalancesInput) -> list[dict[str, Any]]:
+        return await asyncio.gather(
+            *[
+                asyncio.to_thread(self._accounts_client.get_balance, account_id)
+                for account_id in input_data.account_ids
+            ]
+        )
 
 
 class GetTransactionsTool:

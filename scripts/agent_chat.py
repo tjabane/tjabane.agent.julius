@@ -22,6 +22,7 @@ def _create_agent():
     from krabs_tools.tools import (
         GetAccountsTool,
         GetBalanceTool,
+        GetBulkBalancesTool,
         GetPendingTransactionsTool,
         GetTransactionsTool,
     )
@@ -29,6 +30,7 @@ def _create_agent():
     investec_client = InvestecClient()
     tool_registry = ToolRegistry()
     tool_registry.register(GetAccountsTool(investec_client.accounts))
+    tool_registry.register(GetBulkBalancesTool(investec_client.accounts))
     tool_registry.register(GetBalanceTool(investec_client.accounts))
     tool_registry.register(GetTransactionsTool(investec_client.accounts))
     tool_registry.register(GetPendingTransactionsTool(investec_client.accounts))

@@ -1,6 +1,7 @@
 from krabs_tools.schema.investec_accounts import (
     GetAccountsInput,
     GetBalanceInput,
+    GetBulkBalancesInput,
     GetPendingTransactionsInput,
     GetTransactionsInput,
 )
@@ -8,6 +9,7 @@ from krabs_tools.schema.investec_accounts import (
 __all__ = [
     "GetAccountsInput",
     "GetBalanceInput",
+    "GetBulkBalancesInput",
     "GetPendingTransactionsInput",
     "GetTransactionsInput",
 ]
