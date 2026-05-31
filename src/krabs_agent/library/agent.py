@@ -1,27 +1,35 @@
 from __future__ import annotations
+
+import asyncio
 import json
-from collections.abc import Callable
-from typing import Any
-from langfuse import propagate_attributes
-from langfuse.openai import OpenAI
-from krabs_agent.observability import get_langfuse_client
-from krabs_agent.tools import dispatch
-from krabs_agent.tools.deps import ToolDeps
+from typing import Any, cast
+
+from openai import OpenAI
+
 from krabs_domain.models.agent import Message
-
-_client: OpenAI | None = None
-DispatchFn = Callable[[str, dict, ToolDeps | None], str]
-
-
-def _get_client() -> OpenAI:
-    global _client
-    if _client is None:
-        _client = OpenAI()
-    return _client
+from krabs_tools.registry import ToolRegistry
 
 
 def _message_to_dict(message: Message) -> dict[str, str]:
     return {"role": message.role, "content": message.content}
+
+
+def _function_calls(response: Any) -> list[Any]:
+    return [item for item in response.output if getattr(item, "type", None) == "function_call"]
+
+
+def _serialize_tool_output(output: Any) -> str:
+    if isinstance(output, str):
+        return output
+    return json.dumps(output, default=str)
+
+
+def _run_async_tool(coro: Any) -> Any:
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    raise RuntimeError("Agent.send_message cannot execute async tools while an event loop is already running.")
 
 
 class Agent:
@@ -29,86 +37,48 @@ class Agent:
         self,
         model: str,
         system_prompt: str,
-        tools: list[dict[str, Any]],
         messages: list[Message] | None = None,
         *,
-        client: OpenAI | None = None,
-        tool_deps: ToolDeps | None = None,
-        dispatch_fn: DispatchFn = dispatch,
-        trace_name: str = "agent-response",
-        session_id: str | None = None,
-        user_id: str | None = None,
-        tags: list[str] | None = None,
+        client: OpenAI,
+        tool_registry: ToolRegistry | None = None,
     ) -> None:
         self.model = model
-        self.tools = tools
         self.messages: list[Any] = [{"role": "system", "content": system_prompt}]
         self.messages.extend(_message_to_dict(message) for message in messages or [])
-        self._client = client or _get_client()
-        self._tool_deps = tool_deps
-        self._dispatch = dispatch_fn
-        self._trace_name = trace_name
-        self._session_id = session_id
-        self._user_id = user_id
-        self._tags = tags or []
+        self._client = client
+        self._tool_registry = tool_registry
 
     def send_message(self, message: str) -> str:
-        langfuse = get_langfuse_client()
-        with langfuse.start_as_current_observation(
-            as_type="span",
-            name=self._trace_name,
-        ) as span:
-            span.update(input={"message": message})
-            with propagate_attributes(
-                session_id=self._session_id,
-                user_id=self._user_id,
-                tags=self._tags,
-            ):
-                reply = self._send_message(message)
-            span.update(output={"reply": reply})
-            return reply
+        input_list = [*self.messages, {"role": "user", "content": message}]
+        tools = self._tool_registry.get_model_tools() if self._tool_registry else None
+        request: dict[str, Any] = {"model": self.model, "input": input_list}
+        if tools:
+            request["tools"] = tools
 
-    def _send_message(self, message: str) -> str:
-        self.messages.append({"role": "user", "content": message})
+        response = self._client.responses.create(**request)
 
-        while True:
-            response = self._client.chat.completions.create(
-                name="agent-llm-call",
+        while self._tool_registry and (tool_calls := _function_calls(response)):
+            tool_outputs = []
+            for tool_call in tool_calls:
+                tool = self._tool_registry.get(tool_call.name)
+                tool_input = tool.input_schema.model_validate_json(tool_call.arguments or "{}")
+                output = _run_async_tool(tool.run(tool_input))
+                tool_outputs.append(
+                    {
+                        "type": "function_call_output",
+                        "call_id": tool_call.call_id,
+                        "output": _serialize_tool_output(output),
+                    }
+                )
+
+            response = self._client.responses.create(
                 model=self.model,
-                tools=self.tools,
-                messages=self.messages,
+                input=tool_outputs,
+                previous_response_id=response.id,
+                tools=cast(Any, tools),
             )
-            choice = response.choices[0]
 
-            if choice.finish_reason == "stop":
-                reply = choice.message.content or ""
-                self.messages.append({"role": "assistant", "content": reply})
-                return reply
-
-            if choice.finish_reason == "tool_calls":
-                self.messages.append(choice.message)
-                for tool_call in choice.message.tool_calls:
-                    inputs = json.loads(tool_call.function.arguments)
-                    result = self._call_tool(tool_call.function.name, inputs)
-                    self.messages.append(
-                        {
-                            "role": "tool",
-                            "tool_call_id": tool_call.id,
-                            "content": result,
-                        }
-                    )
-                continue
-
-            return choice.message.content or ""
-
-    def _call_tool(self, name: str, inputs: dict) -> str:
-        langfuse = get_langfuse_client()
-        with langfuse.start_as_current_observation(as_type="span", name=f"tool-{name}") as span:
-            span.update(input={"tool": name, "argument_keys": sorted(inputs.keys())})
-            try:
-                result = self._dispatch(name, inputs, self._tool_deps)
-            except Exception as exc:
-                result = f"Error: {exc}"
-                span.update(level="ERROR", status_message=str(exc))
-            span.update(output={"status": "ok" if not result.startswith("Error:") else "error"})
-            return result
+        reply = response.output_text or ""
+        self.messages.append({"role": "user", "content": message})
+        self.messages.append({"role": "assistant", "content": reply})
+        return reply

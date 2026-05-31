@@ -1,10 +1,15 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from unittest.mock import MagicMock, patch
+
+import pytest
+from httpx import HTTPStatusError
+
+from krabs_services.finance.investec_client import InvestecClient
+
 
 def _utcnow():
-    return datetime.now(timezone.utc)
-from unittest.mock import MagicMock, patch
-import pytest
-from krabs_services.finance.investec_client import InvestecClient
+    return datetime.now(UTC)
+
 
 ACCOUNT_ID = "172878438332791809002"
 SANDBOX_BASE = "https://openapisandbox.investec.com"
@@ -24,6 +29,7 @@ def _token_response(expires_in: int = 1800) -> MagicMock:
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
+
 class TestEnsureToken:
     @patch("httpx.post")
     def test_accepts_injected_configuration(self, mock_post):
@@ -36,7 +42,7 @@ class TestEnsureToken:
             timeout=12,
         )
 
-        client._ensure_token()
+        client._http_client._ensure_token()
 
         assert mock_post.call_args.args[0] == "https://investec.example.test/identity/v2/oauth2/token"
         assert mock_post.call_args.kwargs["auth"] == ("injected-client-id", "injected-client-secret")
@@ -47,9 +53,9 @@ class TestEnsureToken:
     def test_fetches_token_on_first_call(self, mock_post):
         mock_post.return_value = _token_response()
         client = InvestecClient()
-        client._ensure_token()
+        client._http_client._ensure_token()
 
-        assert client._token == "mock-token"
+        assert client._http_client._token == "mock-token"
         mock_post.assert_called_once()
         call_kwargs = mock_post.call_args
         assert f"{SANDBOX_BASE}/identity/v2/oauth2/token" in call_kwargs.args[0]
@@ -58,40 +64,40 @@ class TestEnsureToken:
     def test_does_not_refresh_valid_token(self, mock_post):
         mock_post.return_value = _token_response()
         client = InvestecClient()
-        client._token = "existing-token"
-        client._token_expires_at = _utcnow() + timedelta(minutes=10)
+        client._http_client._token = "existing-token"
+        client._http_client._token_expires_at = _utcnow() + timedelta(minutes=10)
 
-        client._ensure_token()
+        client._http_client._ensure_token()
 
         mock_post.assert_not_called()
-        assert client._token == "existing-token"
+        assert client._http_client._token == "existing-token"
 
     @patch("httpx.post")
     def test_refreshes_expired_token(self, mock_post):
         mock_post.return_value = _token_response()
         client = InvestecClient()
-        client._token = "old-token"
-        client._token_expires_at = _utcnow() - timedelta(seconds=1)
+        client._http_client._token = "old-token"
+        client._http_client._token_expires_at = _utcnow() - timedelta(seconds=1)
 
-        client._ensure_token()
+        client._http_client._ensure_token()
 
         mock_post.assert_called_once()
-        assert client._token == "mock-token"
+        assert client._http_client._token == "mock-token"
 
     @patch("httpx.post")
     def test_token_expiry_has_60s_buffer(self, mock_post):
         mock_post.return_value = _token_response(expires_in=1800)
         client = InvestecClient()
-        client._ensure_token()
+        client._http_client._ensure_token()
 
         expected = _utcnow() + timedelta(seconds=1800 - 60)
-        assert abs((client._token_expires_at - expected).total_seconds()) < 2
+        assert abs((client._http_client._token_expires_at - expected).total_seconds()) < 2
 
     @patch("httpx.post")
     def test_uses_sandbox_url(self, mock_post):
         mock_post.return_value = _token_response()
         client = InvestecClient()
-        client._ensure_token()
+        client._http_client._ensure_token()
 
         url = mock_post.call_args.args[0]
         assert SANDBOX_BASE in url
@@ -100,7 +106,7 @@ class TestEnsureToken:
     def test_sends_api_key_header(self, mock_post):
         mock_post.return_value = _token_response()
         client = InvestecClient()
-        client._ensure_token()
+        client._http_client._ensure_token()
 
         headers = mock_post.call_args.kwargs.get("headers", {})
         assert headers.get("x-api-key") == "test-api-key"
@@ -108,20 +114,53 @@ class TestEnsureToken:
 
 # ── Accounts ──────────────────────────────────────────────────────────────────
 
+
+class TestFacadeCapabilities:
+    @patch("httpx.get")
+    @patch("httpx.post")
+    def test_accounts_client_is_available(self, mock_post, mock_get):
+        mock_post.return_value = _token_response()
+        mock_get.return_value = _mock_response({"data": {"accounts": []}})
+        client = InvestecClient()
+
+        assert client.accounts.get_accounts() == []
+
+    @patch("httpx.post")
+    def test_payments_client_is_available(self, mock_post):
+        mock_post.side_effect = [
+            _token_response(),
+            _mock_response({"data": {"TransferResponses": []}}),
+        ]
+        client = InvestecClient()
+
+        assert client.payments.transfer_funds(ACCOUNT_ID, []) == []
+
+    @patch("httpx.get")
+    @patch("httpx.post")
+    def test_documents_client_is_available(self, mock_post, mock_get):
+        mock_post.return_value = _token_response()
+        mock_get.return_value = _mock_response({"data": {"data": []}})
+        client = InvestecClient()
+
+        assert client.documents.get_documents(ACCOUNT_ID, "2026-01-01", "2026-01-31") == []
+
+
 class TestGetAccounts:
     @patch("httpx.get")
     @patch("httpx.post")
     def test_returns_accounts_list(self, mock_post, mock_get):
         mock_post.return_value = _token_response()
-        mock_get.return_value = _mock_response({
-            "data": {
-                "accounts": [
-                    {"accountId": ACCOUNT_ID, "accountName": "Mr J Smith", "productName": "Private Bank Account"}
-                ]
+        mock_get.return_value = _mock_response(
+            {
+                "data": {
+                    "accounts": [
+                        {"accountId": ACCOUNT_ID, "accountName": "Mr J Smith", "productName": "Private Bank Account"}
+                    ]
+                }
             }
-        })
+        )
         client = InvestecClient()
-        result = client.get_accounts()
+        result = client.accounts.get_accounts()
 
         assert len(result) == 1
         assert result[0]["accountId"] == ACCOUNT_ID
@@ -133,7 +172,7 @@ class TestGetAccounts:
         mock_get.return_value = _mock_response({"data": {}})
         client = InvestecClient()
 
-        assert client.get_accounts() == []
+        assert client.accounts.get_accounts() == []
 
     @patch("httpx.get")
     @patch("httpx.post")
@@ -141,7 +180,7 @@ class TestGetAccounts:
         mock_post.return_value = _token_response()
         mock_get.return_value = _mock_response({"data": {"accounts": []}})
         client = InvestecClient()
-        client.get_accounts()
+        client.accounts.get_accounts()
 
         url = mock_get.call_args.args[0]
         assert url == f"{SANDBOX_BASE}/za/pb/v1/accounts"
@@ -149,21 +188,24 @@ class TestGetAccounts:
 
 # ── Balance ───────────────────────────────────────────────────────────────────
 
+
 class TestGetBalance:
     @patch("httpx.get")
     @patch("httpx.post")
     def test_returns_balance_data(self, mock_post, mock_get):
         mock_post.return_value = _token_response()
-        mock_get.return_value = _mock_response({
-            "data": {
-                "accountId": ACCOUNT_ID,
-                "currentBalance": 28857.76,
-                "availableBalance": 98857.76,
-                "currency": "ZAR",
+        mock_get.return_value = _mock_response(
+            {
+                "data": {
+                    "accountId": ACCOUNT_ID,
+                    "currentBalance": 28857.76,
+                    "availableBalance": 98857.76,
+                    "currency": "ZAR",
+                }
             }
-        })
+        )
         client = InvestecClient()
-        result = client.get_balance(ACCOUNT_ID)
+        result = client.accounts.get_balance(ACCOUNT_ID)
 
         assert result["currentBalance"] == 28857.76
         assert result["currency"] == "ZAR"
@@ -174,7 +216,7 @@ class TestGetBalance:
         mock_post.return_value = _token_response()
         mock_get.return_value = _mock_response({"data": {}})
         client = InvestecClient()
-        client.get_balance(ACCOUNT_ID)
+        client.accounts.get_balance(ACCOUNT_ID)
 
         url = mock_get.call_args.args[0]
         assert url == f"{SANDBOX_BASE}/za/pb/v1/accounts/{ACCOUNT_ID}/balance"
@@ -182,20 +224,23 @@ class TestGetBalance:
 
 # ── Transactions ──────────────────────────────────────────────────────────────
 
+
 class TestGetTransactions:
     @patch("httpx.get")
     @patch("httpx.post")
     def test_returns_transactions(self, mock_post, mock_get):
         mock_post.return_value = _token_response()
-        mock_get.return_value = _mock_response({
-            "data": {
-                "transactions": [
-                    {"type": "DEBIT", "amount": 150.00, "description": "WOOLWORTHS FOOD", "status": "POSTED"}
-                ]
+        mock_get.return_value = _mock_response(
+            {
+                "data": {
+                    "transactions": [
+                        {"type": "DEBIT", "amount": 150.00, "description": "WOOLWORTHS FOOD", "status": "POSTED"}
+                    ]
+                }
             }
-        })
+        )
         client = InvestecClient()
-        result = client.get_transactions(ACCOUNT_ID)
+        result = client.accounts.get_transactions(ACCOUNT_ID)
 
         assert len(result) == 1
         assert result[0]["description"] == "WOOLWORTHS FOOD"
@@ -206,7 +251,7 @@ class TestGetTransactions:
         mock_post.return_value = _token_response()
         mock_get.return_value = _mock_response({"data": {"transactions": []}})
         client = InvestecClient()
-        client.get_transactions(ACCOUNT_ID, from_date="2026-01-01", to_date="2026-01-31")
+        client.accounts.get_transactions(ACCOUNT_ID, from_date="2026-01-01", to_date="2026-01-31")
 
         params = mock_get.call_args.kwargs.get("params", {})
         assert params["fromDate"] == "2026-01-01"
@@ -218,7 +263,7 @@ class TestGetTransactions:
         mock_post.return_value = _token_response()
         mock_get.return_value = _mock_response({"data": {"transactions": []}})
         client = InvestecClient()
-        client.get_transactions(ACCOUNT_ID, transaction_type="CardPurchases")
+        client.accounts.get_transactions(ACCOUNT_ID, transaction_type="CardPurchases")
 
         params = mock_get.call_args.kwargs.get("params", {})
         assert params["transactionType"] == "CardPurchases"
@@ -229,7 +274,7 @@ class TestGetTransactions:
         mock_post.return_value = _token_response()
         mock_get.return_value = _mock_response({"data": {"transactions": []}})
         client = InvestecClient()
-        client.get_transactions(ACCOUNT_ID)
+        client.accounts.get_transactions(ACCOUNT_ID)
 
         params = mock_get.call_args.kwargs.get("params", {})
         assert params["includePending"] == "false"
@@ -240,7 +285,7 @@ class TestGetTransactions:
         mock_post.return_value = _token_response()
         mock_get.return_value = _mock_response({"data": {"transactions": []}})
         client = InvestecClient()
-        client.get_transactions(ACCOUNT_ID, include_pending=True)
+        client.accounts.get_transactions(ACCOUNT_ID, include_pending=True)
 
         params = mock_get.call_args.kwargs.get("params", {})
         assert params["includePending"] == "true"
@@ -251,7 +296,7 @@ class TestGetTransactions:
         mock_post.return_value = _token_response()
         mock_get.return_value = _mock_response({"data": {"transactions": []}})
         client = InvestecClient()
-        client.get_transactions(ACCOUNT_ID)
+        client.accounts.get_transactions(ACCOUNT_ID)
 
         params = mock_get.call_args.kwargs.get("params", {})
         assert "fromDate" not in params
@@ -261,22 +306,19 @@ class TestGetTransactions:
 
 # ── Transfers ─────────────────────────────────────────────────────────────────
 
+
 class TestTransferFunds:
     @patch("httpx.post")
     def test_returns_transfer_responses(self, mock_post):
         mock_post.side_effect = [
             _token_response(),
-            _mock_response({
-                "data": {
-                    "TransferResponses": [
-                        {"PaymentReferenceNumber": "REF001", "Status": "PROCESSED"}
-                    ]
-                }
-            }),
+            _mock_response(
+                {"data": {"TransferResponses": [{"PaymentReferenceNumber": "REF001", "Status": "PROCESSED"}]}}
+            ),
         ]
         client = InvestecClient()
         transfers = [{"beneficiaryAccountId": "999", "amount": 500, "myReference": "Rent", "theirReference": "TJ"}]
-        result = client.transfer_funds(ACCOUNT_ID, transfers)
+        result = client.payments.transfer_funds(ACCOUNT_ID, transfers)
 
         assert result[0]["Status"] == "PROCESSED"
 
@@ -288,7 +330,7 @@ class TestTransferFunds:
         ]
         client = InvestecClient()
         transfers = [{"beneficiaryAccountId": "999", "amount": 100, "myReference": "A", "theirReference": "B"}]
-        client.transfer_funds(ACCOUNT_ID, transfers)
+        client.payments.transfer_funds(ACCOUNT_ID, transfers)
 
         body = mock_post.call_args.kwargs.get("json", {})
         assert body["transferList"] == transfers
@@ -300,7 +342,7 @@ class TestTransferFunds:
             _mock_response({"data": {"TransferResponses": []}}),
         ]
         client = InvestecClient()
-        client.transfer_funds(ACCOUNT_ID, [], profile_id="profile-123")
+        client.payments.transfer_funds(ACCOUNT_ID, [], profile_id="profile-123")
 
         body = mock_post.call_args.kwargs.get("json", {})
         assert body["profileId"] == "profile-123"
@@ -312,7 +354,7 @@ class TestTransferFunds:
             _mock_response({"data": {"TransferResponses": []}}),
         ]
         client = InvestecClient()
-        client.transfer_funds(ACCOUNT_ID, [])
+        client.payments.transfer_funds(ACCOUNT_ID, [])
 
         body = mock_post.call_args.kwargs.get("json", {})
         assert "profileId" not in body
@@ -320,16 +362,15 @@ class TestTransferFunds:
 
 # ── Beneficiaries ─────────────────────────────────────────────────────────────
 
+
 class TestBeneficiaries:
     @patch("httpx.get")
     @patch("httpx.post")
     def test_get_beneficiaries_returns_list(self, mock_post, mock_get):
         mock_post.return_value = _token_response()
-        mock_get.return_value = _mock_response({
-            "data": [{"beneficiaryId": "BEN001", "beneficiaryName": "ACME Ltd"}]
-        })
+        mock_get.return_value = _mock_response({"data": [{"beneficiaryId": "BEN001", "beneficiaryName": "ACME Ltd"}]})
         client = InvestecClient()
-        result = client.get_beneficiaries()
+        result = client.payments.get_beneficiaries()
 
         assert result[0]["beneficiaryId"] == "BEN001"
 
@@ -337,11 +378,9 @@ class TestBeneficiaries:
     @patch("httpx.post")
     def test_get_beneficiary_categories(self, mock_post, mock_get):
         mock_post.return_value = _token_response()
-        mock_get.return_value = _mock_response({
-            "data": [{"id": "1", "name": "Personal", "isDefault": True}]
-        })
+        mock_get.return_value = _mock_response({"data": [{"id": "1", "name": "Personal", "isDefault": True}]})
         client = InvestecClient()
-        result = client.get_beneficiary_categories()
+        result = client.payments.get_beneficiary_categories()
 
         assert result[0]["name"] == "Personal"
 
@@ -353,7 +392,7 @@ class TestBeneficiaries:
         ]
         client = InvestecClient()
         payments = [{"beneficiaryId": "BEN001", "amount": 200, "myReference": "X", "theirReference": "Y"}]
-        result = client.pay_beneficiaries(ACCOUNT_ID, payments)
+        result = client.payments.pay_beneficiaries(ACCOUNT_ID, payments)
 
         body = mock_post.call_args.kwargs.get("json", {})
         assert body["paymentList"] == payments
@@ -362,6 +401,7 @@ class TestBeneficiaries:
 
 # ── Documents ─────────────────────────────────────────────────────────────────
 
+
 class TestDocuments:
     @patch("httpx.get")
     @patch("httpx.post")
@@ -369,7 +409,7 @@ class TestDocuments:
         mock_post.return_value = _token_response()
         mock_get.return_value = _mock_response({"data": {"data": []}})
         client = InvestecClient()
-        client.get_documents(ACCOUNT_ID, "2026-01-01", "2026-01-31")
+        client.documents.get_documents(ACCOUNT_ID, "2026-01-01", "2026-01-31")
 
         params = mock_get.call_args.kwargs.get("params", {})
         assert params["fromDate"] == "2026-01-01"
@@ -381,7 +421,7 @@ class TestDocuments:
         mock_post.return_value = _token_response()
         mock_get.return_value = _mock_response({"data": {}})
         client = InvestecClient()
-        client.get_document(ACCOUNT_ID, "STATEMENT", "2026-01-31")
+        client.documents.get_document(ACCOUNT_ID, "STATEMENT", "2026-01-31")
 
         url = mock_get.call_args.args[0]
         assert url == f"{SANDBOX_BASE}/za/pb/v1/accounts/{ACCOUNT_ID}/document/STATEMENT/2026-01-31"
@@ -389,29 +429,24 @@ class TestDocuments:
 
 # ── Error handling ────────────────────────────────────────────────────────────
 
+
 class TestErrorHandling:
     @patch("httpx.post")
     def test_raises_on_auth_failure(self, mock_post):
-        from httpx import HTTPStatusError, Request, Response
         mock_post.return_value = MagicMock(
-            raise_for_status=MagicMock(
-                side_effect=HTTPStatusError("401", request=MagicMock(), response=MagicMock())
-            )
+            raise_for_status=MagicMock(side_effect=HTTPStatusError("401", request=MagicMock(), response=MagicMock()))
         )
         client = InvestecClient()
-        with pytest.raises(Exception):
-            client._ensure_token()
+        with pytest.raises(HTTPStatusError):
+            client._http_client._ensure_token()
 
     @patch("httpx.get")
     @patch("httpx.post")
     def test_raises_on_api_error(self, mock_post, mock_get):
-        from httpx import HTTPStatusError
         mock_post.return_value = _token_response()
         mock_get.return_value = MagicMock(
-            raise_for_status=MagicMock(
-                side_effect=HTTPStatusError("500", request=MagicMock(), response=MagicMock())
-            )
+            raise_for_status=MagicMock(side_effect=HTTPStatusError("500", request=MagicMock(), response=MagicMock()))
         )
         client = InvestecClient()
-        with pytest.raises(Exception):
-            client.get_accounts()
+        with pytest.raises(HTTPStatusError):
+            client.accounts.get_accounts()

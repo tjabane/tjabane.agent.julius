@@ -50,6 +50,8 @@ Twilio  --->  Azure Container Apps (FastAPI webhook)
 
 The FastAPI process runs a background scheduler every 5 minutes to dispatch due scheduled reports. The Container App is configured with one replica by default so scheduled reports are not processed twice.
 
+The agent uses OpenAI's Responses API with a `ToolRegistry`. Investec banking tools live in `krabs_tools`, where Pydantic schemas define the model-facing contract and grouped factory functions compose account, document, and payment tools from an injected `InvestecClient`. Both the webhook runner and `scripts/agent_chat.py` use the same factory path so local testing and deployed behavior stay aligned.
+
 ---
 
 ## Tech Stack
@@ -59,7 +61,6 @@ The FastAPI process runs a background scheduler every 5 minutes to dispatch due 
 | Runtime | FastAPI on Azure Container Apps |
 | Container Registry | Azure Container Registry |
 | AI | OpenAI |
-| Observability | Langfuse |
 | Messaging | Twilio WhatsApp |
 | Banking | Investec Private Banking API |
 | Database | Azure Cosmos DB |
@@ -98,14 +99,16 @@ $env:SCHEDULER_ENABLED = "false"
 uv run uvicorn krabs_application.fastapi_app:app --app-dir src --reload --port 8000
 ```
 
-Iterate on the agent directly without the API:
+### Local agent chat
+
+Use `scripts/agent_chat.py` to iterate on the agent directly without running the
+FastAPI webhook. It loads `.env`, uses the same system prompt and tool
+definitions as the app, and sends traces with the `local-agent-chat` session.
 
 ```powershell
 uv run python scripts\agent_chat.py
 uv run python scripts\agent_chat.py "show my accounts"
 ```
-
-Langfuse tracing is enabled automatically when `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are present. Set `LANGFUSE_BASE_URL` for your Langfuse region or self-hosted instance, and set `LANGFUSE_TRACING_ENABLED=false` to disable tracing locally. WhatsApp identifiers are hashed before being used as Langfuse `session_id` and `user_id`; set `LANGFUSE_USER_ID_SALT` to make those hashes project-specific.
 
 Or run the API in Docker for local development:
 
@@ -151,14 +154,18 @@ https://<container-app-fqdn>/api/webhook
 ```
 src/
   krabs_application/       # FastAPI app, scheduler, health, and agent logic
-  krabs_agent/             # AI agent core, tools (banking, knowledge, reporting)
+  krabs_agent/             # AI agent core, runner, and legacy non-Investec tools
   krabs_domain/            # Domain models and data access
     models/                 # Pydantic data models
     repositories/           # Cosmos DB repositories
   krabs_services/          # External service integrations
     communication/          # Twilio (WhatsApp) + Azure email
     finance/                # Investec banking API client
+  krabs_tools/             # Responses API tool registry, schemas, adapters, factories
 infrastructure/             # Azure Bicep IaC templates
+scripts/
+  agent_chat.py             # Local CLI for chatting with the agent directly
+  init_local_cosmos.py      # Initialize local Cosmos DB containers
 tests/
   krabs_unit_tests/        # Unit tests (mocked dependencies)
   krabs_integration_tests/ # Integration tests (live Investec sandbox)

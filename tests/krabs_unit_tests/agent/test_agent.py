@@ -1,37 +1,37 @@
-import json
-from unittest.mock import MagicMock
-import pytest
-from krabs_domain.models.agent import Session
+from types import SimpleNamespace
+from typing import Any
+from unittest.mock import MagicMock, patch
+
+from pydantic import BaseModel, ConfigDict
+
 from krabs_agent.agent_runner import run, run_scheduled
+from krabs_agent.library.agent import Agent
 from krabs_agent.tools.deps import ToolDeps
+from krabs_domain.models.agent import Session
+from krabs_tools.registry import ToolRegistry
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
-
-def _stop_response(content: str):
-    choice = MagicMock()
-    choice.finish_reason = "stop"
-    choice.message.content = content
-    response = MagicMock()
-    response.choices = [choice]
-    return response
+def _stop_response(content: str, response_id: str = "response_1"):
+    return SimpleNamespace(id=response_id, output=[], output_text=content)
 
 
-def _tool_response(tool_name: str, arguments: dict, tool_id: str = "call_1"):
-    tool_call = MagicMock()
-    tool_call.id = tool_id
-    tool_call.function.name = tool_name
-    tool_call.function.arguments = json.dumps(arguments)
-    choice = MagicMock()
-    choice.finish_reason = "tool_calls"
-    choice.message.tool_calls = [tool_call]
-    response = MagicMock()
-    response.choices = [choice]
-    return response
+def _tool_response(tool_name: str, arguments: str = "{}", call_id: str = "call_1"):
+    return SimpleNamespace(
+        id="response_with_tool_call",
+        output=[
+            SimpleNamespace(
+                type="function_call",
+                name=tool_name,
+                arguments=arguments,
+                call_id=call_id,
+            )
+        ],
+        output_text="",
+    )
 
 
 class FakeSessions:
-    def __init__(self):
+    def __init__(self) -> None:
         self._store: dict[str, Session] = {}
 
     def get_or_create(self, whatsapp_number: str) -> Session:
@@ -44,12 +44,27 @@ class FakeSessions:
         return session
 
 
-# ── run() tests ───────────────────────────────────────────────────────────────
+class ExampleInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class ExampleTool:
+    name = "example_tool"
+    description = "Example tool."
+    input_schema = ExampleInput
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def run(self, input_data: ExampleInput) -> list[dict[str, Any]]:
+        self.calls += 1
+        return [{"id": "1", "name": "Cheque"}]
+
 
 class TestRun:
     def test_returns_reply_on_stop(self):
         client = MagicMock()
-        client.chat.completions.create.return_value = _stop_response("Hello! How can I help?")
+        client.responses.create.return_value = _stop_response("Hello! How can I help?")
 
         reply = run("+27831234567", "hello", client=client, sessions=FakeSessions())
 
@@ -58,7 +73,7 @@ class TestRun:
     def test_appends_user_and_assistant_messages_to_session(self):
         sessions = FakeSessions()
         client = MagicMock()
-        client.chat.completions.create.return_value = _stop_response("Hi!")
+        client.responses.create.return_value = _stop_response("Hi!")
 
         run("+27831234567", "hello", client=client, sessions=sessions)
 
@@ -71,79 +86,127 @@ class TestRun:
     def test_accumulates_messages_across_calls(self):
         sessions = FakeSessions()
         client = MagicMock()
-        client.chat.completions.create.return_value = _stop_response("Reply")
+        client.responses.create.return_value = _stop_response("Reply")
 
         run("+27831234567", "first", client=client, sessions=sessions)
         run("+27831234567", "second", client=client, sessions=sessions)
 
         msgs = sessions._store["+27831234567"].messages
-        assert len(msgs) == 4  # user, assistant, user, assistant
+        assert len(msgs) == 4
 
-    def test_dispatches_tool_call_then_continues(self):
-        mock_investec = MagicMock()
-        mock_investec.get_accounts.return_value = [{"id": "1", "name": "Cheque"}]
-        deps = ToolDeps(investec=mock_investec)
-
+    def test_sends_existing_session_messages_to_agent(self):
+        sessions = FakeSessions()
         client = MagicMock()
-        client.chat.completions.create.side_effect = [
-            _tool_response("get_accounts", {}),
-            _stop_response("You have 1 account."),
+        client.responses.create.return_value = _stop_response("Reply")
+
+        run("+27831234567", "first", client=client, sessions=sessions)
+        run("+27831234567", "second", client=client, sessions=sessions)
+
+        second_call_input = client.responses.create.call_args_list[1].kwargs["input"]
+        assert second_call_input[-3:] == [
+            {"role": "user", "content": "first"},
+            {"role": "assistant", "content": "Reply"},
+            {"role": "user", "content": "second"},
         ]
 
-        reply = run("+27831234567", "show accounts", client=client, sessions=FakeSessions(), tool_deps=deps)
+    def test_accepts_tool_deps_without_using_legacy_dispatch(self):
+        client = MagicMock()
+        client.responses.create.return_value = _stop_response("Done.")
+
+        reply = run("+27831234567", "hello", client=client, sessions=FakeSessions(), tool_deps=ToolDeps())
+
+        assert reply == "Done."
+
+    @patch("krabs_agent.agent_runner.Agent")
+    def test_passes_tool_registry_to_agent(self, agent_class):
+        client = MagicMock()
+        sessions = FakeSessions()
+        agent = MagicMock()
+        agent.send_message.return_value = "Done."
+        agent_class.return_value = agent
+
+        run("+27831234567", "hello", client=client, sessions=sessions)
+
+        assert agent_class.call_args.kwargs["tool_registry"] is not None
+
+
+class TestAgentToolRegistry:
+    def test_dispatches_tool_call_then_continues(self):
+        tool = ExampleTool()
+        registry = ToolRegistry()
+        registry.register(tool)
+        client = MagicMock()
+        client.responses.create.side_effect = [
+            _tool_response("example_tool"),
+            _stop_response("You have 1 account.", response_id="response_2"),
+        ]
+        agent = Agent(
+            model="test-model",
+            system_prompt="System prompt.",
+            client=client,
+            tool_registry=registry,
+        )
+
+        reply = agent.send_message("show accounts")
 
         assert reply == "You have 1 account."
-        mock_investec.get_accounts.assert_called_once()
-        assert client.chat.completions.create.call_count == 2
+        assert tool.calls == 1
+        assert client.responses.create.call_count == 2
 
-    def test_tool_result_appended_before_second_llm_call(self):
-        mock_investec = MagicMock()
-        mock_investec.get_accounts.return_value = [{"id": "abc"}]
-        deps = ToolDeps(investec=mock_investec)
-
+    def test_sends_function_call_output_to_second_response_call(self):
+        tool = ExampleTool()
+        registry = ToolRegistry()
+        registry.register(tool)
         client = MagicMock()
-        client.chat.completions.create.side_effect = [
-            _tool_response("get_accounts", {}),
-            _stop_response("Done."),
+        client.responses.create.side_effect = [
+            _tool_response("example_tool", call_id="call_123"),
+            _stop_response("Done.", response_id="response_2"),
+        ]
+        agent = Agent(
+            model="test-model",
+            system_prompt="System prompt.",
+            client=client,
+            tool_registry=registry,
+        )
+
+        agent.send_message("accounts")
+
+        second_call = client.responses.create.call_args_list[1].kwargs
+        assert second_call["previous_response_id"] == "response_with_tool_call"
+        assert second_call["input"] == [
+            {
+                "type": "function_call_output",
+                "call_id": "call_123",
+                "output": '[{"id": "1", "name": "Cheque"}]',
+            }
         ]
 
-        run("+27831234567", "accounts", client=client, sessions=FakeSessions(), tool_deps=deps)
-
-        second_call_messages = client.chat.completions.create.call_args_list[1][1]["messages"]
-        roles = [m["role"] if isinstance(m, dict) else m.role for m in second_call_messages]
-        assert "tool" in roles
-
-
-# ── run_scheduled() tests ─────────────────────────────────────────────────────
 
 class TestRunScheduled:
     def test_returns_reply_on_stop(self):
         client = MagicMock()
-        client.chat.completions.create.return_value = _stop_response("Report done.")
+        client.responses.create.return_value = _stop_response("Report done.")
 
         result = run_scheduled("sched-1", "send balance summary", client=client)
 
         assert result == "Report done."
 
-    def test_injects_schedule_id_into_send_email(self):
-        mock_repo = MagicMock()
-        mock_email = MagicMock()
-        deps = ToolDeps(report_repo=mock_repo, email=mock_email)
-
+    def test_sends_query_to_agent_without_persisting_session(self):
         client = MagicMock()
-        client.chat.completions.create.side_effect = [
-            _tool_response("send_email", {"subject": "Report", "body": "Balance: R1000"}),
-            _stop_response("Done."),
-        ]
+        client.responses.create.return_value = _stop_response("Done.")
 
-        run_scheduled("sched-42", "send report", client=client, tool_deps=deps)
+        run_scheduled("sched-1", "send report", client=client, tool_deps=ToolDeps())
 
-        saved_report = mock_repo.save.call_args[0][0]
-        assert saved_report.schedule_id == "sched-42"
+        request = client.responses.create.call_args.kwargs
+        assert request["input"][-1] == {"role": "user", "content": "send report"}
 
-    def test_does_not_persist_session(self):
+    @patch("krabs_agent.agent_runner.Agent")
+    def test_passes_tool_registry_to_scheduled_agent(self, agent_class):
         client = MagicMock()
-        client.chat.completions.create.return_value = _stop_response("Done.")
+        agent = MagicMock()
+        agent.send_message.return_value = "Done."
+        agent_class.return_value = agent
 
-        # run_scheduled has no sessions parameter — calling it should not raise
-        run_scheduled("sched-1", "query", client=client)
+        run_scheduled("sched-1", "send report", client=client)
+
+        assert agent_class.call_args.kwargs["tool_registry"] is not None
