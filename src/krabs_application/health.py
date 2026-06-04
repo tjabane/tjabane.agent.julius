@@ -14,11 +14,6 @@ from azure.cosmos import CosmosClient
 from openai import OpenAI
 from twilio.rest import Client as TwilioRestClient
 
-from krabs_services.communication.providers import (
-    get_message_sender,
-    get_report_sender,
-    use_in_memory_communication,
-)
 from krabs_services.finance.investec_client import InvestecClient, get_investec_base_url
 
 _TIMEOUT_SECONDS = 5.0
@@ -82,10 +77,6 @@ def _check_openai() -> None:
 
 
 def _check_twilio() -> None:
-    if use_in_memory_communication():
-        get_message_sender()
-        return
-
     client = TwilioRestClient(
         os.environ["TWILIO_ACCOUNT_SID"],
         os.environ["TWILIO_AUTH_TOKEN"],
@@ -94,10 +85,6 @@ def _check_twilio() -> None:
 
 
 def _check_acs_email_config() -> None:
-    if use_in_memory_communication():
-        get_report_sender()
-        return
-
     EmailClient.from_connection_string(os.environ["AZURE_COMMUNICATION_CONNECTION_STRING"])
     if not os.environ.get("EMAIL_SENDER_ADDRESS"):
         raise RuntimeError("EMAIL_SENDER_ADDRESS is not set")
