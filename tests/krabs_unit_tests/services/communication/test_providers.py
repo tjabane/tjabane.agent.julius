@@ -20,7 +20,7 @@ def test_external_provider_uses_external_clients(monkeypatch, mocker):
     monkeypatch.setenv("COMMUNICATION_PROVIDER", "external")
     reset_communication_providers()
     twilio_cls = mocker.patch("krabs_services.communication.providers.TwilioClient", autospec=True)
-    email_cls = mocker.patch("krabs_services.communication.providers.EmailService", autospec=True)
+    email_cls = mocker.patch("krabs_services.communication.providers.AzureEmailService", autospec=True)
 
     get_message_sender()
     get_report_sender()

@@ -95,17 +95,13 @@ flowchart LR
     user[User]
 
     subgraph assistant[Mr Krabs]
-        onceOffReport((Create once-off financial report))
+        onceOffReport((Create spending scoreboard))
         resolveDates((Resolve reporting period))
         gatherData((Gather accounts and transactions))
-        draftReport((Draft report))
-        emailReport((Email report))
-        saveRecord((Save report record))
+        draftReport((Draft WhatsApp scoreboard))
     end
 
     investec[Investec API]
-    cosmos[Cosmos DB]
-    email[Azure Communication Services Email]
 
     user --> onceOffReport
 
@@ -113,10 +109,6 @@ flowchart LR
     onceOffReport --> gatherData
     gatherData --> investec
     gatherData --> draftReport
-    draftReport --> emailReport
-    emailReport --> email
-    draftReport --> saveRecord
-    saveRecord --> cosmos
 
 ```
 

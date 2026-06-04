@@ -22,10 +22,10 @@ flowchart TB
             health[GET /ping<br/>GET /health]
             agent[Mr Krabs agent runtime]
             registry[Tool registry<br/>Responses API functions]
-            tools[Tool adapters<br/>Investec, dates, reporting, knowledge]
+            tools[Tool adapters<br/>banking and dates]
         end
 
-        cosmos[(Azure Cosmos DB<br/>sessions, memories, skills,<br/>sent reports)]
+        cosmos[(Azure Cosmos DB<br/>sessions, memories, skills)]
         keyVault[Azure Key Vault<br/>configuration and secrets]
         acr[Azure Container Registry]
     end
@@ -51,7 +51,6 @@ flowchart TB
     registry --> tools
     tools --> investec
     tools --> cosmos
-    tools --> email
     fastapi --> twilio
     twilio --> user
 
@@ -77,7 +76,6 @@ sequenceDiagram
     participant Tools as Tool registry/adapters
     participant Investec as Investec API
     participant Cosmos as Cosmos DB
-    participant Email as ACS Email
 
     User->>Twilio: Send WhatsApp message
     Twilio->>API: POST /webhook
@@ -90,13 +88,9 @@ sequenceDiagram
         Tools->>Investec: Accounts, balances, transactions, documents, payments, transfers
         Investec-->>Tools: Banking response
     end
-    alt Memory, skills, or report records needed
+    alt Memory or skills needed
         Tools->>Cosmos: Read or write stored state
         Cosmos-->>Tools: Stored data
-    end
-    alt Email report requested
-        Tools->>Email: Send plain-text report
-        Email-->>Tools: Delivery result
     end
     Tools-->>Agent: Tool result
     Agent->>OpenAI: Continue response with tool output

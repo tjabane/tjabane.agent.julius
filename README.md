@@ -16,7 +16,7 @@ Mr Krabs is an AI-powered assistant that lets you interact with your Investec ac
 - Transfer funds between accounts
 
 ### Reporting
-- Receive reports by email via Azure Communication Services
+- Generate daily and weekly spending scoreboards in WhatsApp
 
 ### Memory
 - Mr Krabs remembers your preferences, habits, and facts across conversations
@@ -40,10 +40,6 @@ Twilio  --->  Azure Container Apps (FastAPI webhook)
    Investec API           Cosmos DB
    (banking data)   (sessions, memory,
                      reports)
-                         |
-                         v
-              Azure Communication Services
-                    (email reports)
 ```
 
 The agent uses OpenAI's Responses API with a `ToolRegistry`. Banking tools live in `krabs_tools`, where Pydantic schemas define the model-facing contract and grouped factory functions compose account, document, and payment tools from an injected `BankingClient`. `InvestecClient` is the current provider implementation. Both the webhook runner and `scripts/agent_chat.py` use the same factory path so local testing and deployed behavior stay aligned.

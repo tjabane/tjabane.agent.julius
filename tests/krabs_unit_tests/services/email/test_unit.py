@@ -1,6 +1,8 @@
 from unittest.mock import MagicMock, patch
+
 import pytest
-from krabs_services.communication.email_service import EmailService
+
+from krabs_services.communication.email_service import AzureEmailService
 
 
 @pytest.fixture(autouse=True)
@@ -15,19 +17,19 @@ def email_env(monkeypatch):
 class TestInit:
     @patch("krabs_services.communication.email_service.EmailClient")
     def test_creates_client_from_connection_string(self, mock_client_cls):
-        EmailService()
+        AzureEmailService()
         mock_client_cls.from_connection_string.assert_called_once_with(
             "endpoint=https://test.communication.azure.com/;accesskey=dGVzdA=="
         )
 
     @patch("krabs_services.communication.email_service.EmailClient")
     def test_stores_sender_address(self, mock_client_cls):
-        service = EmailService()
+        service = AzureEmailService()
         assert service._sender == "DoNotReply@test.azurecomm.net"
 
     @patch("krabs_services.communication.email_service.EmailClient")
     def test_stores_recipient_address(self, mock_client_cls):
-        service = EmailService()
+        service = AzureEmailService()
         assert service._recipient == "user@example.com"
 
 
@@ -39,7 +41,7 @@ class TestSendReport:
         mock_acs = MagicMock()
         mock_client_cls.from_connection_string.return_value = mock_acs
 
-        service = EmailService()
+        service = AzureEmailService()
         service.send_report(subject="Weekly Report", body="Here is your report.")
 
         mock_acs.begin_send.assert_called_once()
@@ -49,7 +51,7 @@ class TestSendReport:
         mock_acs = MagicMock()
         mock_client_cls.from_connection_string.return_value = mock_acs
 
-        service = EmailService()
+        service = AzureEmailService()
         service.send_report(subject="Report", body="Body")
 
         message = mock_acs.begin_send.call_args.args[0]
@@ -60,7 +62,7 @@ class TestSendReport:
         mock_acs = MagicMock()
         mock_client_cls.from_connection_string.return_value = mock_acs
 
-        service = EmailService()
+        service = AzureEmailService()
         service.send_report(subject="Report", body="Body")
 
         message = mock_acs.begin_send.call_args.args[0]
@@ -71,7 +73,7 @@ class TestSendReport:
         mock_acs = MagicMock()
         mock_client_cls.from_connection_string.return_value = mock_acs
 
-        service = EmailService()
+        service = AzureEmailService()
         service.send_report(subject="Weekly Report", body="Body")
 
         message = mock_acs.begin_send.call_args.args[0]
@@ -82,7 +84,7 @@ class TestSendReport:
         mock_acs = MagicMock()
         mock_client_cls.from_connection_string.return_value = mock_acs
 
-        service = EmailService()
+        service = AzureEmailService()
         service.send_report(subject="Report", body="Here is your weekly summary.")
 
         message = mock_acs.begin_send.call_args.args[0]
@@ -93,7 +95,7 @@ class TestSendReport:
         mock_acs = MagicMock()
         mock_client_cls.from_connection_string.return_value = mock_acs
 
-        service = EmailService()
+        service = AzureEmailService()
         service.send_report(subject="Report", body="Body")
 
         mock_acs.begin_send.return_value.result.assert_called_once()

@@ -10,7 +10,7 @@ class SentReport:
     body: str
 
 
-class EmailService:
+class AzureEmailService:
     def __init__(self):
         self._client = EmailClient.from_connection_string(
             os.environ["AZURE_COMMUNICATION_CONNECTION_STRING"]

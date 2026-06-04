@@ -11,9 +11,9 @@ See [use-case-diagrams.md](use-case-diagrams.md) for diagram views of these stor
 - **User**: The Investec account holder using WhatsApp.
 - **Mr Krabs**: The AI banking assistant. It is concise, protective of the user's money, and uses a light Mr Krabs-style voice.
 - **Investec API**: Source of account, balance, transaction, beneficiary, transfer, payment, and document data.
-- **Cosmos DB**: Stores chat sessions, memories, skills, and sent report records.
+- **Cosmos DB**: Stores chat sessions, memories, and skills.
 - **Twilio WhatsApp**: Receives user messages and delivers replies.
-- **Azure Communication Services Email**: Sends generated financial reports by email.
+- **Azure Communication Services Email**: Configured for future report delivery.
 
 ## Story 1: Checking What Money Is Available
 
@@ -145,32 +145,32 @@ Mr Krabs identifies the account and date range, retrieves available documents, a
 - Retrieve a specific statement or tax certificate.
 - Resolve natural language dates before querying documents.
 
-## Story 6: Creating a Once-Off Financial Report
+## Story 6: Creating a Spending Scoreboard
 
-The user wants a quick spending review before payday:
+The user wants a quick at-a-glance view of spending:
 
-> "Give me a report on my spending this month and email it to me."
+> "Show me my weekly spending scoreboard."
 
-Mr Krabs resolves the month-to-date period, gathers account and transaction data, structures a report with totals and notable items, sends it by email, and saves the report record.
+Mr Krabs resolves the requested period, gathers account and transaction data, and returns a compact scoreboard in WhatsApp. The scoreboard shows total spend, score, status, daily breakdown, top categories, largest expenses, and a short watch list.
 
 **Primary flow**
 
-1. The agent calls `resolve_date_range` for `this_month`.
+1. The agent calls `resolve_date_range` for the requested period.
 2. It calls account and transaction tools needed for the report.
-3. It drafts the report with totals, categories, and notable transactions.
-4. It calls `send_email` with the subject and plain-text report body.
-5. The report is saved and delivered by email.
+3. It groups spend by day and obvious merchant/category patterns.
+4. It calculates a simple score out of 100 based on spend level, concentration, fees, and unusually large items.
+5. It replies with a short scoreboard in WhatsApp.
 
 **Current capabilities used**
 
 - Generate report content from banking data.
-- Email financial reports.
-- Save sent report records.
-- Use saved skills when a relevant reporting approach exists.
+- Resolve reporting periods.
+- Fetch accounts and transactions.
+- Generate a WhatsApp-friendly scoreboard from banking data.
 
 **Outcome**
 
-The user receives a report over email while keeping WhatsApp interaction short.
+The user can understand daily or weekly spending at a glance without opening the banking app.
 
 ## Story 7: Remembering Preferences
 
@@ -268,5 +268,5 @@ The script loads the same environment, system prompt, model, and Investec tool f
 
 - The assistant is designed for a single user's Investec Private Banking context.
 - The webhook expects Twilio form fields containing a WhatsApp sender and message body.
-- Email reports are plain text.
+- Manual spending scoreboards are returned over WhatsApp in v1.
 - The application relies on configured Investec, OpenAI, Cosmos DB, Twilio, and email environment settings.

@@ -3,14 +3,15 @@ from __future__ import annotations
 import os
 from typing import Literal
 
-from krabs_services.communication.email_service import EmailService, InMemoryEmailService
-from krabs_services.communication.protocols import MessageSender, ReportSender
+from krabs_domain.contracts import EmailService
+from krabs_services.communication.email_service import AzureEmailService, InMemoryEmailService
+from krabs_services.communication.protocols import MessageSender
 from krabs_services.communication.twilio_client import InMemoryTwilioClient, TwilioClient
 
 CommunicationProvider = Literal["memory", "external"]
 
 _message_sender: MessageSender | None = None
-_report_sender: ReportSender | None = None
+_report_sender: EmailService | None = None
 
 
 def get_communication_provider() -> CommunicationProvider:
@@ -36,10 +37,10 @@ def get_message_sender() -> MessageSender:
     return _message_sender
 
 
-def get_report_sender() -> ReportSender:
+def get_report_sender() -> EmailService:
     global _report_sender
     if _report_sender is None:
-        _report_sender = InMemoryEmailService() if use_in_memory_communication() else EmailService()
+        _report_sender = InMemoryEmailService() if use_in_memory_communication() else AzureEmailService()
     return _report_sender
 
 
