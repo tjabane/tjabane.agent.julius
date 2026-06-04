@@ -16,7 +16,7 @@ SYSTEM_PROMPT = (SRC / "krabs_agent" / "prompts" / "system.md").read_text()
 def _create_agent():
     from openai import OpenAI
 
-    from krabs_agent.library.agent import Agent
+    from krabs_agent.runtime import Agent
     from krabs_services.finance.investec_client import InvestecClient
     from krabs_tools.registry import ToolRegistry
     from krabs_tools.tools import create_banking_tools

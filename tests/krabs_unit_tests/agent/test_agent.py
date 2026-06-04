@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from pydantic import BaseModel, ConfigDict
 
 from krabs_agent.agent_runner import run
-from krabs_agent.library.agent import Agent
+from krabs_agent.runtime import Agent
 from krabs_domain.models.agent import Session
 from krabs_tools.registry import ToolRegistry
 

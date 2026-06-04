@@ -5,7 +5,7 @@ from pathlib import Path
 
 from openai import OpenAI
 
-from krabs_agent.library.agent import Agent
+from krabs_agent.runtime import Agent
 from krabs_domain.models.agent import Message
 from krabs_domain.repositories.agent import SessionRepository
 from krabs_services.finance.investec_client import InvestecClient
