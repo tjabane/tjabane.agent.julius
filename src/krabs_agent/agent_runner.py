@@ -6,7 +6,6 @@ from pathlib import Path
 from openai import OpenAI
 
 from krabs_agent.library.agent import Agent
-from krabs_agent.tools.deps import ToolDeps
 from krabs_domain.models.agent import Message
 from krabs_domain.repositories.agent import SessionRepository
 from krabs_services.finance.investec_client import InvestecClient
@@ -42,9 +41,7 @@ def run(
     *,
     client: OpenAI | None = None,
     sessions: SessionRepository | None = None,
-    tool_deps: ToolDeps | None = None,
 ) -> str:
-    _ = tool_deps
     client = client or OpenAI()
     sessions = sessions or _get_sessions()
     session = sessions.get_or_create(whatsapp_number)
@@ -69,9 +66,8 @@ def run_scheduled(
     query: str,
     *,
     client: OpenAI | None = None,
-    tool_deps: ToolDeps | None = None,
 ) -> str:
-    _ = (schedule_id, tool_deps)
+    _ = schedule_id
     client = client or OpenAI()
 
     agent = Agent(

@@ -6,7 +6,6 @@ from pydantic import BaseModel, ConfigDict
 
 from krabs_agent.agent_runner import run, run_scheduled
 from krabs_agent.library.agent import Agent
-from krabs_agent.tools.deps import ToolDeps
 from krabs_domain.models.agent import Session
 from krabs_tools.registry import ToolRegistry
 
@@ -109,14 +108,6 @@ class TestRun:
             {"role": "user", "content": "second"},
         ]
 
-    def test_accepts_tool_deps_without_using_legacy_dispatch(self):
-        client = MagicMock()
-        client.responses.create.return_value = _stop_response("Done.")
-
-        reply = run("+27831234567", "hello", client=client, sessions=FakeSessions(), tool_deps=ToolDeps())
-
-        assert reply == "Done."
-
     @patch("krabs_agent.agent_runner.Agent")
     def test_passes_tool_registry_to_agent(self, agent_class):
         client = MagicMock()
@@ -195,7 +186,7 @@ class TestRunScheduled:
         client = MagicMock()
         client.responses.create.return_value = _stop_response("Done.")
 
-        run_scheduled("sched-1", "send report", client=client, tool_deps=ToolDeps())
+        run_scheduled("sched-1", "send report", client=client)
 
         request = client.responses.create.call_args.kwargs
         assert request["input"][-1] == {"role": "user", "content": "send report"}
