@@ -15,6 +15,7 @@ from krabs_tools.schema.banking_payments import (
     TransferInstruction,
 )
 from krabs_tools.schema.datetime import GetCurrentDateTimeInput, ResolveDateRangeInput
+from krabs_tools.schema.reporting import SendReportEmailInput
 
 __all__ = [
     "BeneficiaryPaymentInstruction",
@@ -30,6 +31,7 @@ __all__ = [
     "GetTransactionsInput",
     "PayBeneficiariesInput",
     "ResolveDateRangeInput",
+    "SendReportEmailInput",
     "TransferFundsInput",
     "TransferInstruction",
 ]

@@ -1,6 +1,7 @@
 from typing import Any
 
-from krabs_domain.contracts import BankingClient
+from krabs_domain.contracts import BankingClient, EmailService
+from krabs_domain.repositories.reporting import ReportRepository
 from krabs_tools.tools import (
     GetAccountsTool,
     GetBalanceTool,
@@ -14,12 +15,14 @@ from krabs_tools.tools import (
     GetTransactionsTool,
     PayBeneficiariesTool,
     ResolveDateRangeTool,
+    SendReportEmailTool,
     TransferFundsTool,
     create_banking_account_tools,
     create_banking_document_tools,
     create_banking_payment_tools,
     create_banking_tools,
     create_datetime_tools,
+    create_reporting_tools,
 )
 
 
@@ -73,14 +76,38 @@ class FakeBankingClient:
         return b""
 
 
+class FakeEmailService:
+    def send_report(self, subject: str, body: str) -> None:
+        _ = (subject, body)
+
+
+class FakeReportRepository(ReportRepository):
+    def __init__(self) -> None:
+        self.saved_reports: list[Any] = []
+
+    def save(self, report):
+        self.saved_reports.append(report)
+        return report
+
+
 def accepts_banking_client(client: BankingClient) -> BankingClient:
     return client
+
+
+def accepts_email_service(service: EmailService) -> EmailService:
+    return service
 
 
 def test_fake_banking_client_satisfies_protocol():
     client = FakeBankingClient()
 
     assert accepts_banking_client(client) is client
+
+
+def test_fake_email_service_satisfies_protocol():
+    service = FakeEmailService()
+
+    assert accepts_email_service(service) is service
 
 
 def test_create_banking_account_tools_returns_account_tools_with_shared_client():
@@ -155,3 +182,14 @@ def test_create_datetime_tools_returns_datetime_tools():
         "get_current_datetime",
         "resolve_date_range",
     ]
+
+
+def test_create_reporting_tools_returns_reporting_tool_with_shared_dependencies():
+    email_service = FakeEmailService()
+    report_repository = FakeReportRepository()
+
+    tools = create_reporting_tools(email_service, report_repository)
+
+    assert [type(tool) for tool in tools] == [SendReportEmailTool]
+    assert tools[0]._email_service is email_service
+    assert tools[0]._report_repository is report_repository

@@ -1,4 +1,7 @@
-from krabs_domain.contracts import BankingClient
+from collections.abc import Callable
+
+from krabs_domain.contracts import BankingClient, EmailService
+from krabs_domain.repositories.reporting import ReportRepository
 from krabs_tools.registry import Tool
 from krabs_tools.tools.banking import (
     GetAccountsTool,
@@ -14,6 +17,7 @@ from krabs_tools.tools.banking import (
     TransferFundsTool,
 )
 from krabs_tools.tools.datetime import GetCurrentDateTimeTool, ResolveDateRangeTool
+from krabs_tools.tools.reporting import SendReportEmailTool
 
 
 def create_banking_account_tools(banking_client: BankingClient) -> list[Tool]:
@@ -54,4 +58,13 @@ def create_datetime_tools() -> list[Tool]:
     return [
         GetCurrentDateTimeTool(),
         ResolveDateRangeTool(),
+    ]
+
+
+def create_reporting_tools(
+    email_service: EmailService,
+    report_repository: ReportRepository | Callable[[], ReportRepository],
+) -> list[Tool]:
+    return [
+        SendReportEmailTool(email_service, report_repository),
     ]
