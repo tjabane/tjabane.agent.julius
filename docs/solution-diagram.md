@@ -1,6 +1,6 @@
 # Mr Krabs Solution Diagram
 
-This diagram shows the deployed solution components and the main runtime paths for WhatsApp requests, banking/reporting tools, scheduled reports, and operational checks.
+This diagram shows the deployed solution components and the main runtime paths for WhatsApp requests, banking/reporting tools, and operational checks.
 
 ```mermaid
 flowchart TB
@@ -21,12 +21,11 @@ flowchart TB
             webhook[POST /webhook<br/>POST /api/webhook]
             health[GET /ping<br/>GET /health]
             agent[Mr Krabs agent runtime]
-            scheduler[Background scheduler<br/>every 5 minutes]
             registry[Tool registry<br/>Responses API functions]
             tools[Tool adapters<br/>Investec, dates, reporting, knowledge]
         end
 
-        cosmos[(Azure Cosmos DB<br/>sessions, memories, skills,<br/>schedules, sent reports)]
+        cosmos[(Azure Cosmos DB<br/>sessions, memories, skills,<br/>sent reports)]
         keyVault[Azure Key Vault<br/>configuration and secrets]
         acr[Azure Container Registry]
     end
@@ -55,10 +54,6 @@ flowchart TB
     tools --> email
     fastapi --> twilio
     twilio --> user
-
-    scheduler --> agent
-    scheduler --> cosmos
-    scheduler --> email
 
     operator --> health
     health --> cosmos
@@ -95,7 +90,7 @@ sequenceDiagram
         Tools->>Investec: Accounts, balances, transactions, documents, payments, transfers
         Investec-->>Tools: Banking response
     end
-    alt Memory, skills, schedules, or report records needed
+    alt Memory, skills, or report records needed
         Tools->>Cosmos: Read or write stored state
         Cosmos-->>Tools: Stored data
     end
@@ -109,29 +104,6 @@ sequenceDiagram
     API->>Cosmos: Save updated session
     API-->>Twilio: Reply message
     Twilio-->>User: Deliver response
-```
-
-## Scheduled Report Flow
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Scheduler
-    participant Cosmos as Cosmos DB
-    participant Agent as Mr Krabs agent
-    participant Investec as Investec API
-    participant Email as ACS Email
-
-    Scheduler->>Cosmos: Find due enabled schedules
-    loop For each due schedule
-        Scheduler->>Agent: Run saved report query
-        Agent->>Investec: Fetch accounts and transactions
-        Investec-->>Agent: Banking data
-        Agent->>Email: Send report
-        Email-->>Agent: Delivery result
-        Agent->>Cosmos: Save sent report record
-        Scheduler->>Cosmos: Advance next run
-    end
 ```
 
 ## Tool Composition

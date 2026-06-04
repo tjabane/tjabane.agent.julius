@@ -15,7 +15,6 @@ flowchart LR
     subgraph system[Mr Krabs WhatsApp Banking Assistant]
         webhook((WhatsApp webhook))
         agent((AI banking assistant))
-        scheduler((Report scheduler))
         health((Health endpoints))
         cli((Local agent chat))
     end
@@ -31,10 +30,6 @@ flowchart LR
     agent --> investec
     agent --> cosmos
     agent --> email
-
-    scheduler --> agent
-    scheduler --> cosmos
-    scheduler --> email
 
     operator --> health
     health --> cosmos
@@ -93,24 +88,19 @@ flowchart LR
     twilio --> user
 ```
 
-## Reports and Scheduling
+## Reports
 
 ```mermaid
 flowchart LR
     user[User]
-    schedulerActor[Scheduler]
 
     subgraph assistant[Mr Krabs]
         onceOffReport((Create once-off financial report))
-        createSchedule((Schedule recurring report))
-        manageSchedule((Manage existing schedules))
-        runDue((Run due scheduled report))
         resolveDates((Resolve reporting period))
         gatherData((Gather accounts and transactions))
         draftReport((Draft report))
         emailReport((Email report))
         saveRecord((Save report record))
-        advanceSchedule((Advance next run))
     end
 
     investec[Investec API]
@@ -118,9 +108,6 @@ flowchart LR
     email[Azure Communication Services Email]
 
     user --> onceOffReport
-    user --> createSchedule
-    user --> manageSchedule
-    schedulerActor --> runDue
 
     onceOffReport --> resolveDates
     onceOffReport --> gatherData
@@ -131,15 +118,6 @@ flowchart LR
     draftReport --> saveRecord
     saveRecord --> cosmos
 
-    createSchedule --> cosmos
-    manageSchedule --> cosmos
-
-    runDue --> cosmos
-    runDue --> gatherData
-    runDue --> emailReport
-    runDue --> saveRecord
-    runDue --> advanceSchedule
-    advanceSchedule --> cosmos
 ```
 
 ## Memory and Reusable Skills

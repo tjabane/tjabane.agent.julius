@@ -60,20 +60,3 @@ def run(
     sessions.save(session)
     return reply
 
-
-def run_scheduled(
-    schedule_id: str,
-    query: str,
-    *,
-    client: OpenAI | None = None,
-) -> str:
-    _ = schedule_id
-    client = client or OpenAI()
-
-    agent = Agent(
-        model=_MODEL,
-        system_prompt=_SYSTEM_PROMPT,
-        client=client,
-        tool_registry=_get_tool_registry(),
-    )
-    return agent.send_message(query)

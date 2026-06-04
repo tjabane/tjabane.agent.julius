@@ -2,7 +2,7 @@
 
 > Your personal Investec banking agent, accessible via WhatsApp.
 
-Mr Krabs is an AI-powered assistant that lets you interact with your Investec accounts through WhatsApp. Send a message and Mr Krabs will check balances, review transactions, schedule reports, and more in plain English.
+Mr Krabs is an AI-powered assistant that lets you interact with your Investec accounts through WhatsApp. Send a message and Mr Krabs will check balances, review transactions, generate reports, and more in plain English.
 
 ---
 
@@ -16,9 +16,7 @@ Mr Krabs is an AI-powered assistant that lets you interact with your Investec ac
 - Transfer funds between accounts
 
 ### Reporting
-- Schedule automated financial reports (daily or weekly)
 - Receive reports by email via Azure Communication Services
-- Manage schedules: create, update, enable, disable, or delete
 
 ### Memory
 - Mr Krabs remembers your preferences, habits, and facts across conversations
@@ -41,14 +39,12 @@ Twilio  --->  Azure Container Apps (FastAPI webhook)
           v                   v
    Investec API           Cosmos DB
    (banking data)   (sessions, memory,
-                     schedules, reports)
+                     reports)
                          |
                          v
               Azure Communication Services
                     (email reports)
 ```
-
-The FastAPI process runs a background scheduler every 5 minutes to dispatch due scheduled reports. The Container App is configured with one replica by default so scheduled reports are not processed twice.
 
 The agent uses OpenAI's Responses API with a `ToolRegistry`. Investec banking tools live in `krabs_tools`, where Pydantic schemas define the model-facing contract and grouped factory functions compose account, document, and payment tools from an injected `InvestecClient`. Both the webhook runner and `scripts/agent_chat.py` use the same factory path so local testing and deployed behavior stay aligned.
 
@@ -95,7 +91,6 @@ uv run python scripts\init_local_cosmos.py
 Run the API locally:
 
 ```powershell
-$env:SCHEDULER_ENABLED = "false"
 uv run uvicorn krabs_application.fastapi_app:app --app-dir src --reload --port 8000
 ```
 
@@ -153,8 +148,8 @@ https://<container-app-fqdn>/api/webhook
 
 ```
 src/
-  krabs_application/       # FastAPI app, scheduler, health, and agent logic
-  krabs_agent/             # AI agent core, runner, and legacy non-Investec tools
+  krabs_application/       # FastAPI app, health, and agent routing
+  krabs_agent/             # AI agent core, runner, and prompts
   krabs_domain/            # Domain models and data access
     models/                 # Pydantic data models
     repositories/           # Cosmos DB repositories

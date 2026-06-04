@@ -12,9 +12,7 @@ class StubMessageSender:
         self.sent_messages.append({"to": to, "body": body})
 
 
-def test_ping_returns_ok(monkeypatch):
-    monkeypatch.setenv("SCHEDULER_ENABLED", "false")
-
+def test_ping_returns_ok():
     with TestClient(app) as client:
         response = client.get("/ping")
 
@@ -23,7 +21,6 @@ def test_ping_returns_ok(monkeypatch):
 
 
 def test_health_returns_503_when_unhealthy(monkeypatch):
-    monkeypatch.setenv("SCHEDULER_ENABLED", "false")
     monkeypatch.setattr(
         "krabs_application.http_routes.run_health_checks",
         lambda: {"status": "unhealthy", "dependencies": {}},
@@ -36,18 +33,14 @@ def test_health_returns_503_when_unhealthy(monkeypatch):
     assert response.json()["status"] == "unhealthy"
 
 
-def test_webhook_rejects_missing_twilio_form(monkeypatch):
-    monkeypatch.setenv("SCHEDULER_ENABLED", "false")
-
+def test_webhook_rejects_missing_twilio_form():
     with TestClient(app) as client:
         response = client.post("/webhook", data={})
 
     assert response.status_code == 400
 
 
-def test_legacy_api_webhook_alias(monkeypatch):
-    monkeypatch.setenv("SCHEDULER_ENABLED", "false")
-
+def test_legacy_api_webhook_alias():
     with TestClient(app) as client:
         response = client.post("/api/webhook", data={})
 
@@ -55,7 +48,6 @@ def test_legacy_api_webhook_alias(monkeypatch):
 
 
 def test_webhook_uses_injected_message_sender(monkeypatch):
-    monkeypatch.setenv("SCHEDULER_ENABLED", "false")
     sender = StubMessageSender()
     app.dependency_overrides[get_message_sender] = lambda: sender
     monkeypatch.setattr(

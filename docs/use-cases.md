@@ -1,6 +1,6 @@
 # Mr Krabs Use Cases
 
-Mr Krabs is a WhatsApp-first Investec banking assistant for one user. The user speaks in plain English, the assistant resolves the request, calls the relevant banking, memory, reporting, or scheduling tools, and replies back through WhatsApp.
+Mr Krabs is a WhatsApp-first Investec banking assistant for one user. The user speaks in plain English, the assistant resolves the request, calls the relevant banking, memory, or reporting tools, and replies back through WhatsApp.
 
 The stories below describe the current product behavior as implemented today.
 
@@ -11,10 +11,9 @@ See [use-case-diagrams.md](use-case-diagrams.md) for diagram views of these stor
 - **User**: The Investec account holder using WhatsApp.
 - **Mr Krabs**: The AI banking assistant. It is concise, protective of the user's money, and uses a light Mr Krabs-style voice.
 - **Investec API**: Source of account, balance, transaction, beneficiary, transfer, payment, and document data.
-- **Cosmos DB**: Stores chat sessions, memories, skills, schedules, and sent report records.
+- **Cosmos DB**: Stores chat sessions, memories, skills, and sent report records.
 - **Twilio WhatsApp**: Receives user messages and delivers replies.
 - **Azure Communication Services Email**: Sends generated financial reports by email.
-- **Scheduler**: Runs every five minutes when enabled and dispatches due scheduled reports.
 
 ## Story 1: Checking What Money Is Available
 
@@ -173,60 +172,7 @@ Mr Krabs resolves the month-to-date period, gathers account and transaction data
 
 The user receives a report over email while keeping WhatsApp interaction short.
 
-## Story 7: Scheduling Recurring Reports
-
-The user wants weekly discipline around spending:
-
-> "Send me a weekly report every Monday morning showing my account balances and biggest expenses."
-
-Mr Krabs creates a schedule with the report query, frequency, and next run time. If no time is supplied, the current implementation defaults the next scheduled run to the next day at 06:00 UTC. The scheduler later picks up due schedules, runs the saved query through the agent, emails the report, saves the report record, and advances the next run.
-
-**Primary flow**
-
-1. The agent calls `manage_schedule` with `action: create`.
-2. The schedule is stored with query, frequency, next run, and enabled status.
-3. The background scheduler checks for due schedules every five minutes.
-4. When due, it runs the saved report query.
-5. The scheduled report is emailed and saved with the schedule ID.
-6. The schedule's next run is moved to the next daily or weekly 06:00 UTC slot.
-
-**Current capabilities used**
-
-- Create daily or weekly schedules.
-- List schedules.
-- Update schedule query, frequency, or next run.
-- Enable or disable schedules.
-- Delete schedules.
-- Run due schedules automatically when the scheduler is enabled.
-
-**Operational note**
-
-The deployed container is expected to run as a single replica by default so due schedules are not processed twice.
-
-## Story 8: Managing Existing Report Schedules
-
-The user no longer wants a daily report and sends:
-
-> "Disable my daily cashflow report."
-
-Mr Krabs lists schedules if it needs to identify the correct one. It then disables the matching schedule without deleting it, so it can be enabled again later.
-
-**Primary flow**
-
-1. The agent calls `manage_schedule` with `action: list` if the schedule is ambiguous.
-2. It calls `manage_schedule` with `action: disable` for the chosen schedule ID.
-3. Mr Krabs confirms that the schedule is disabled.
-
-**Supported schedule actions**
-
-- `create`
-- `list`
-- `update`
-- `enable`
-- `disable`
-- `delete`
-
-## Story 9: Remembering Preferences
+## Story 7: Remembering Preferences
 
 The user says:
 
@@ -247,7 +193,7 @@ Mr Krabs saves this as a preference. Later, when the user asks for spending repo
 - Search stored memories by keyword.
 - Use remembered context across conversations.
 
-## Story 10: Saving Reusable Analysis Skills
+## Story 8: Saving Reusable Analysis Skills
 
 After refining a useful report format, the user wants Mr Krabs to reuse it:
 
@@ -268,7 +214,7 @@ Mr Krabs can save a reusable skill with markdown instructions. Before future rep
 - List available skills.
 - Load a named skill before related work.
 
-## Story 11: Health and Operations
+## Story 9: Health and Operations
 
 An operator wants to know whether the service is alive before wiring Twilio to it. They call:
 
@@ -291,7 +237,7 @@ GET /health
 - Dependency health endpoint.
 - Legacy `/api/ping`, `/api/health`, and `/api/webhook` aliases for compatibility.
 
-## Story 12: Local Agent Testing
+## Story 10: Local Agent Testing
 
 A developer wants to test the assistant without sending real WhatsApp messages. They run:
 
@@ -305,7 +251,7 @@ or:
 uv run python scripts\agent_chat.py "show my accounts"
 ```
 
-The script loads the same environment, system prompt, model, and Investec tool factory path used by the deployed app. This lets developers iterate on banking, reporting, memory, and scheduling behavior before exposing changes through the webhook.
+The script loads the same environment, system prompt, model, and Investec tool factory path used by the deployed app. This lets developers iterate on banking, reporting, and memory behavior before exposing changes through the webhook.
 
 ## Cross-Cutting Rules
 
@@ -321,8 +267,6 @@ The script loads the same environment, system prompt, model, and Investec tool f
 ## Current Boundaries
 
 - The assistant is designed for a single user's Investec Private Banking context.
-- Scheduled reports support daily and weekly frequencies.
-- Scheduled report times are stored as concrete datetimes; default and recurring scheduler advancement currently use 06:00 UTC.
 - The webhook expects Twilio form fields containing a WhatsApp sender and message body.
 - Email reports are plain text.
 - The application relies on configured Investec, OpenAI, Cosmos DB, Twilio, and email environment settings.
