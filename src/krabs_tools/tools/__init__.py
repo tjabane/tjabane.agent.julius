@@ -1,22 +1,22 @@
-from krabs_tools.tools.factories import (
-    create_investec_account_tools,
-    create_investec_document_tools,
-    create_investec_payment_tools,
-    create_investec_tools,
-)
-from krabs_tools.tools.investec_accounts import (
+from krabs_tools.tools.banking_accounts import (
     GetAccountsTool,
     GetBalanceTool,
     GetBulkBalancesTool,
     GetPendingTransactionsTool,
     GetTransactionsTool,
 )
-from krabs_tools.tools.investec_documents import GetDocumentsTool, GetDocumentTool
-from krabs_tools.tools.investec_payments import (
+from krabs_tools.tools.banking_documents import GetDocumentsTool, GetDocumentTool
+from krabs_tools.tools.banking_payments import (
     GetBeneficiariesTool,
     GetBeneficiaryCategoriesTool,
     PayBeneficiariesTool,
     TransferFundsTool,
+)
+from krabs_tools.tools.factories import (
+    create_banking_account_tools,
+    create_banking_document_tools,
+    create_banking_payment_tools,
+    create_banking_tools,
 )
 
 __all__ = [
@@ -31,8 +31,8 @@ __all__ = [
     "GetTransactionsTool",
     "PayBeneficiariesTool",
     "TransferFundsTool",
-    "create_investec_account_tools",
-    "create_investec_document_tools",
-    "create_investec_payment_tools",
-    "create_investec_tools",
+    "create_banking_account_tools",
+    "create_banking_document_tools",
+    "create_banking_payment_tools",
+    "create_banking_tools",
 ]

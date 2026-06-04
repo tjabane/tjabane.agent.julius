@@ -108,12 +108,13 @@ sequenceDiagram
 
 ## Tool Composition
 
-Investec tools are composed explicitly at the application boundary:
+Banking tools are composed explicitly at the application boundary:
 
-1. `InvestecClient` owns the HTTP-backed account, document, and payment clients.
-2. `krabs_tools.tools.factories` groups concrete tool adapters by dependency: `create_investec_account_tools`, `create_investec_document_tools`, and `create_investec_payment_tools`.
-3. `create_investec_tools` combines those groups for the normal app path.
-4. `ToolRegistry.register_many` registers the resulting tools for the Responses API.
-5. `krabs_agent.agent_runner` and `scripts/agent_chat.py` both use the same factory path.
+1. `krabs_domain.contracts.BankingClient` defines the banking capability contract.
+2. `InvestecClient` is the current HTTP-backed implementation of that contract.
+3. `krabs_tools.tools.factories` groups tool adapters by capability: `create_banking_account_tools`, `create_banking_document_tools`, and `create_banking_payment_tools`.
+4. `create_banking_tools` combines those groups for the normal app path.
+5. `ToolRegistry.register_many` registers the resulting tools for the Responses API.
+6. `krabs_agent.agent_runner` and `scripts/agent_chat.py` both use the same factory path.
 
 This keeps external dependencies visible while avoiding one-by-one registration in every entry point.

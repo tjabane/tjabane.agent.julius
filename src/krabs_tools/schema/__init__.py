@@ -1,12 +1,12 @@
-from krabs_tools.schema.investec_accounts import (
+from krabs_tools.schema.banking_accounts import (
     GetAccountsInput,
     GetBalanceInput,
     GetBulkBalancesInput,
     GetPendingTransactionsInput,
     GetTransactionsInput,
 )
-from krabs_tools.schema.investec_documents import GetDocumentInput, GetDocumentsInput
-from krabs_tools.schema.investec_payments import (
+from krabs_tools.schema.banking_documents import GetDocumentInput, GetDocumentsInput
+from krabs_tools.schema.banking_payments import (
     BeneficiaryPaymentInstruction,
     GetBeneficiariesInput,
     GetBeneficiaryCategoriesInput,

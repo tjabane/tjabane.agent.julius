@@ -46,7 +46,7 @@ Twilio  --->  Azure Container Apps (FastAPI webhook)
                     (email reports)
 ```
 
-The agent uses OpenAI's Responses API with a `ToolRegistry`. Investec banking tools live in `krabs_tools`, where Pydantic schemas define the model-facing contract and grouped factory functions compose account, document, and payment tools from an injected `InvestecClient`. Both the webhook runner and `scripts/agent_chat.py` use the same factory path so local testing and deployed behavior stay aligned.
+The agent uses OpenAI's Responses API with a `ToolRegistry`. Banking tools live in `krabs_tools`, where Pydantic schemas define the model-facing contract and grouped factory functions compose account, document, and payment tools from an injected `BankingClient`. `InvestecClient` is the current provider implementation. Both the webhook runner and `scripts/agent_chat.py` use the same factory path so local testing and deployed behavior stay aligned.
 
 ---
 

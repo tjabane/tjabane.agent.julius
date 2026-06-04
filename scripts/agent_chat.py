@@ -19,11 +19,11 @@ def _create_agent():
     from krabs_agent.library.agent import Agent
     from krabs_services.finance.investec_client import InvestecClient
     from krabs_tools.registry import ToolRegistry
-    from krabs_tools.tools import create_investec_tools
+    from krabs_tools.tools import create_banking_tools
 
-    investec_client = InvestecClient()
+    banking_client = InvestecClient()
     tool_registry = ToolRegistry()
-    tool_registry.register_many(create_investec_tools(investec_client))
+    tool_registry.register_many(create_banking_tools(banking_client))
 
     return Agent(
         model=os.environ.get("OPENAI_MODEL", "gpt-5"),
