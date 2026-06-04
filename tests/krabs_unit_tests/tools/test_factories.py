@@ -7,16 +7,19 @@ from krabs_tools.tools import (
     GetBeneficiariesTool,
     GetBeneficiaryCategoriesTool,
     GetBulkBalancesTool,
+    GetCurrentDateTimeTool,
     GetDocumentsTool,
     GetDocumentTool,
     GetPendingTransactionsTool,
     GetTransactionsTool,
     PayBeneficiariesTool,
+    ResolveDateRangeTool,
     TransferFundsTool,
     create_banking_account_tools,
     create_banking_document_tools,
     create_banking_payment_tools,
     create_banking_tools,
+    create_datetime_tools,
 )
 
 
@@ -138,4 +141,17 @@ def test_create_banking_tools_combines_all_grouped_factories():
         "get_beneficiaries",
         "get_beneficiary_categories",
         "pay_beneficiaries",
+    ]
+
+
+def test_create_datetime_tools_returns_datetime_tools():
+    tools = create_datetime_tools()
+
+    assert [type(tool) for tool in tools] == [
+        GetCurrentDateTimeTool,
+        ResolveDateRangeTool,
+    ]
+    assert [tool.name for tool in tools] == [
+        "get_current_datetime",
+        "resolve_date_range",
     ]

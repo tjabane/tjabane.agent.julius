@@ -10,7 +10,7 @@ from krabs_domain.models.agent import Message
 from krabs_domain.repositories.agent import SessionRepository
 from krabs_services.finance.investec_client import InvestecClient
 from krabs_tools.registry import ToolRegistry
-from krabs_tools.tools import create_banking_tools
+from krabs_tools.tools import create_banking_tools, create_datetime_tools
 
 _SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / "system.md").read_text()
 _MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")
@@ -31,6 +31,7 @@ def _get_tool_registry() -> ToolRegistry:
         banking_client = InvestecClient()
         registry = ToolRegistry()
         registry.register_many(create_banking_tools(banking_client))
+        registry.register_many(create_datetime_tools())
         _tool_registry = registry
     return _tool_registry
 
