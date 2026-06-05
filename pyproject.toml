@@ -32,9 +32,13 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests/krabs_unit_tests", "tests/krabs_integration_tests"]
+testpaths = ["tests/krabs_unit_tests", "tests/krabs_e2e_tests", "tests/krabs_integration_tests"]
 pythonpath = ["src"]
-markers = ["integration: live sandbox tests (require credentials)"]
+markers = [
+    "integration: live sandbox tests (require credentials)",
+    "e2e: local end-to-end app flow tests",
+    "e2e_live: deployed/live end-to-end smoke tests",
+]
 
 [tool.ruff]
 target-version = "py312"

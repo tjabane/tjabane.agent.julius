@@ -4,8 +4,8 @@ param appName string = 'krabs'
 @description('Azure region for all resources')
 param location string = resourceGroup().location
 
-@description('Use Investec sandbox API')
-param investecSandbox bool = true
+@description('Investec API base URL for this environment')
+param investecUrl string = 'https://openapisandbox.investec.com'
 
 @description('Runtime environment name exposed to the Container App')
 param appEnvironment string = 'dev'
@@ -86,7 +86,7 @@ module containerApp 'modules/container-app.bicep' = {
     keyVaultName: keyvault.outputs.name
     userAssignedIdentityId: runtimeIdentity.id
     userAssignedIdentityPrincipalId: runtimeIdentity.properties.principalId
-    investecSandbox: investecSandbox
+    investecUrl: investecUrl
     appEnvironment: appEnvironment
     emailSenderAddress: communication.outputs.senderAddress
     containerImage: containerImage

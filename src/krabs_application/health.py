@@ -14,7 +14,7 @@ from azure.cosmos import CosmosClient
 from openai import OpenAI
 from twilio.rest import Client as TwilioRestClient
 
-from krabs_services.finance.investec_client import InvestecClient, get_investec_base_url
+from krabs_services.finance.investec_client import InvestecClient, get_investec_url
 
 _TIMEOUT_SECONDS = 5.0
 
@@ -91,7 +91,7 @@ def _check_acs_email_config() -> None:
 
 
 def _check_investec_reachable() -> None:
-    base = (os.environ.get("INVESTEC_BASE_URL") or get_investec_base_url()).rstrip("/")
+    base = get_investec_url()
     response = httpx.get(base, timeout=_TIMEOUT_SECONDS)
     try:
         response.raise_for_status()

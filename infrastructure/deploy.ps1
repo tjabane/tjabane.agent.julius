@@ -11,7 +11,7 @@ param(
 
     [string]$AppEnvironment = "dev",
 
-    [bool]$InvestecSandbox = $true,
+    [string]$InvestecUrl = "https://openapisandbox.investec.com",
 
     [string]$ImageTag = "latest"
 )
@@ -40,7 +40,7 @@ Write-Host "`n[4/8] Deploying Bicep infrastructure..." -ForegroundColor Cyan
 $deployOutput = az deployment group create `
     --resource-group $ResourceGroup `
     --template-file "$PSScriptRoot\main.bicep" `
-    --parameters appName=$AppName location=$Location appEnvironment=$AppEnvironment investecSandbox=$($InvestecSandbox.ToString().ToLower()) deployingUserObjectId=$deployingUserObjectId `
+    --parameters appName=$AppName location=$Location appEnvironment=$AppEnvironment investecUrl=$InvestecUrl deployingUserObjectId=$deployingUserObjectId `
     --query properties.outputs `
     --output json | ConvertFrom-Json
 
@@ -100,7 +100,7 @@ Write-Host "`n[7/8] Applying runtime secrets and container image..." -Foreground
 $deployOutput = az deployment group create `
     --resource-group $ResourceGroup `
     --template-file "$PSScriptRoot\main.bicep" `
-    --parameters appName=$AppName location=$Location appEnvironment=$AppEnvironment investecSandbox=$($InvestecSandbox.ToString().ToLower()) deployingUserObjectId=$deployingUserObjectId containerImage=$image configureRuntimeSecrets=true `
+    --parameters appName=$AppName location=$Location appEnvironment=$AppEnvironment investecUrl=$InvestecUrl deployingUserObjectId=$deployingUserObjectId containerImage=$image configureRuntimeSecrets=true `
     --query properties.outputs `
     --output json | ConvertFrom-Json
 

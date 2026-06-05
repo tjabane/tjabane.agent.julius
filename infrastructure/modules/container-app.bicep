@@ -3,7 +3,7 @@ param location string
 param keyVaultName string
 param userAssignedIdentityId string
 param userAssignedIdentityPrincipalId string
-param investecSandbox bool
+param investecUrl string
 param appEnvironment string
 param emailSenderAddress string
 param containerImage string
@@ -142,8 +142,8 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               value: 'external'
             }
             {
-              name: 'INVESTEC_SANDBOX'
-              value: string(investecSandbox)
+              name: 'INVESTEC_URL'
+              value: investecUrl
             }
             {
               name: 'COSMOS_DATABASE'

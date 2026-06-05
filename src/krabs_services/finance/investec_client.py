@@ -9,10 +9,8 @@ def _utcnow() -> datetime:
     return datetime.now(UTC)
 
 
-def get_investec_base_url() -> str:
-    sandbox = os.environ.get("INVESTEC_SANDBOX", "true").lower() == "true"
-    default_url_key = "INVESTEC_SANDBOX_URL" if sandbox else "INVESTEC_PROD_URL"
-    return os.environ[default_url_key].rstrip("/")
+def get_investec_url() -> str:
+    return os.environ["INVESTEC_URL"].rstrip("/")
 
 
 def get_investec_timeout_seconds() -> float:
@@ -167,7 +165,7 @@ class InvestecClient:
         client_id = client_id or os.environ["INVESTEC_CLIENT_ID"]
         client_secret = client_secret or os.environ["INVESTEC_CLIENT_SECRET"]
         api_key = api_key or os.environ["INVESTEC_API_KEY"]
-        base_url = base_url or os.environ.get("INVESTEC_BASE_URL") or get_investec_base_url()
+        base_url = base_url or get_investec_url()
         timeout = timeout if timeout is not None else get_investec_timeout_seconds()
         self._http_client = http_client or InvestecHttpClient(
             client_id=client_id,

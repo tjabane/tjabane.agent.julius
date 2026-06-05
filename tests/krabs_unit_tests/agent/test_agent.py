@@ -120,6 +120,19 @@ class TestRun:
 
         assert agent_class.call_args.kwargs["tool_registry"] is not None
 
+    @patch("krabs_agent.agent_runner.Agent")
+    def test_reads_model_from_environment_for_each_run(self, agent_class, monkeypatch):
+        monkeypatch.setenv("OPENAI_MODEL", "test-e2e-model")
+        client = MagicMock()
+        sessions = FakeSessions()
+        agent = MagicMock()
+        agent.send_message.return_value = "Done."
+        agent_class.return_value = agent
+
+        run("+27831234567", "hello", client=client, sessions=sessions)
+
+        assert agent_class.call_args.kwargs["model"] == "test-e2e-model"
+
 
 class TestAgentToolRegistry:
     def test_dispatches_tool_call_then_continues(self):

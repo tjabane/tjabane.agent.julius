@@ -15,9 +15,12 @@ from krabs_tools.registry import ToolRegistry
 from krabs_tools.tools import create_banking_tools, create_datetime_tools, create_reporting_tools
 
 _SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / "system.md").read_text()
-_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")
 _sessions: SessionRepository | None = None
 _tool_registry: ToolRegistry | None = None
+
+
+def _get_model() -> str:
+    return os.environ.get("OPENAI_MODEL", "gpt-4o")
 
 
 def _get_sessions() -> SessionRepository:
@@ -52,7 +55,7 @@ def run(
     session = sessions.get_or_create(whatsapp_number)
 
     agent = Agent(
-        model=_MODEL,
+        model=_get_model(),
         system_prompt=_SYSTEM_PROMPT,
         messages=session.messages,
         client=client,

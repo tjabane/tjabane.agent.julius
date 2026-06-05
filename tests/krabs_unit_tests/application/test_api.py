@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
 from krabs_application.fastapi_app import app
-from krabs_application.http_routes import get_message_sender
+from krabs_application.http_routes import get_agent_runner, get_message_sender
 
 
 class StubMessageSender:
@@ -47,12 +47,11 @@ def test_legacy_api_webhook_alias():
     assert response.status_code == 400
 
 
-def test_webhook_uses_injected_message_sender(monkeypatch):
+def test_webhook_uses_injected_message_sender_and_agent_runner():
     sender = StubMessageSender()
     app.dependency_overrides[get_message_sender] = lambda: sender
-    monkeypatch.setattr(
-        "krabs_application.http_routes.run",
-        lambda whatsapp_number, user_message: f"reply to {user_message}",
+    app.dependency_overrides[get_agent_runner] = lambda: (
+        lambda whatsapp_number, user_message: f"reply to {user_message}"
     )
 
     try:

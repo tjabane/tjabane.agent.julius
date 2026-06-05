@@ -7,14 +7,12 @@ load_dotenv()
 @pytest.fixture(autouse=True)
 def dummy_env(monkeypatch, request):
     """Provide dummy env vars for unit tests. Integration tests use real .env values."""
-    if request.node.get_closest_marker("integration"):
+    if request.node.get_closest_marker("integration") or request.node.get_closest_marker("e2e_live"):
         return
     monkeypatch.setenv("INVESTEC_CLIENT_ID", "test-client-id")
     monkeypatch.setenv("INVESTEC_CLIENT_SECRET", "test-client-secret")
     monkeypatch.setenv("INVESTEC_API_KEY", "test-api-key")
-    monkeypatch.setenv("INVESTEC_SANDBOX", "true")
-    monkeypatch.setenv("INVESTEC_SANDBOX_URL", "https://openapisandbox.investec.com")
-    monkeypatch.setenv("INVESTEC_PROD_URL", "https://openapi.investec.com")
+    monkeypatch.setenv("INVESTEC_URL", "https://openapisandbox.investec.com")
     monkeypatch.setenv("INVESTEC_TIMEOUT_SECONDS", "5.0")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     monkeypatch.setenv("COSMOS_CONNECTION_STRING", "AccountEndpoint=https://fake.documents.azure.com:443/;AccountKey=ZmFrZWtleWZha2U=;")

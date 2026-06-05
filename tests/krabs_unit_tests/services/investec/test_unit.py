@@ -94,7 +94,7 @@ class TestEnsureToken:
         assert abs((client._http_client._token_expires_at - expected).total_seconds()) < 2
 
     @patch("httpx.post")
-    def test_uses_sandbox_url(self, mock_post):
+    def test_uses_configured_investec_url(self, mock_post):
         mock_post.return_value = _token_response()
         client = InvestecClient()
         client._http_client._ensure_token()

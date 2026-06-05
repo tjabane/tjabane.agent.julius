@@ -101,6 +101,35 @@ uv run python scripts\agent_chat.py
 uv run python scripts\agent_chat.py "show my accounts"
 ```
 
+### Tests
+
+Run the local unit and webhook E2E suites:
+
+```powershell
+uv run pytest tests\krabs_unit_tests tests\krabs_e2e_tests
+```
+
+Run the documented-use-case E2E suite only:
+
+```powershell
+uv run pytest tests\krabs_e2e_tests -m e2e
+```
+
+Run the live Investec sandbox integration suite:
+
+```powershell
+uv run pytest tests\krabs_integration_tests
+```
+
+Run development-only live webhook E2E smoke tests against real OpenAI, local Cosmos DB, and the Investec sandbox while capturing outbound WhatsApp replies locally. The suite uses `OPENAI_E2E_MODEL` when set, otherwise it overrides `OPENAI_MODEL` to `gpt-4o-mini` for lower token usage:
+
+```powershell
+$env:KRABS_RUN_LIVE_E2E="true"
+uv run pytest tests\krabs_e2e_tests -m e2e_live
+```
+
+The live E2E suite is sandbox-only. It refuses non-sandbox `INVESTEC_URL` values so development runs cannot accidentally target production.
+
 Or run the API in Docker for local development:
 
 ```powershell
