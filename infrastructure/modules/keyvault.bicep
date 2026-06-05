@@ -3,10 +3,33 @@ param location string
 param deployingUserObjectId string = ''
 param runtimePrincipalId string = ''
 
-// Key Vault Secrets Officer - allows the deploying user to set secrets post-deploy
-var secretsOfficerRoleId = 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7'
-// Key Vault Secrets User - allows the container app identity to read secrets at runtime
-var secretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
+var deployerAccessPolicies = !empty(deployingUserObjectId) ? [
+  {
+    tenantId: subscription().tenantId
+    objectId: deployingUserObjectId
+    permissions: {
+      secrets: [
+        'get'
+        'list'
+        'set'
+        'delete'
+      ]
+    }
+  }
+] : []
+
+var runtimeAccessPolicies = !empty(runtimePrincipalId) ? [
+  {
+    tenantId: subscription().tenantId
+    objectId: runtimePrincipalId
+    permissions: {
+      secrets: [
+        'get'
+        'list'
+      ]
+    }
+  }
+] : []
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: name
@@ -17,29 +40,10 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
       name: 'standard'
     }
     tenantId: subscription().tenantId
-    enableRbacAuthorization: true
+    enableRbacAuthorization: false
+    accessPolicies: concat(deployerAccessPolicies, runtimeAccessPolicies)
     enableSoftDelete: true
     softDeleteRetentionInDays: 7
-  }
-}
-
-resource deployerAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(deployingUserObjectId)) {
-  name: guid(keyVault.id, deployingUserObjectId, secretsOfficerRoleId)
-  scope: keyVault
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', secretsOfficerRoleId)
-    principalId: deployingUserObjectId
-    principalType: 'User'
-  }
-}
-
-resource runtimeAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(runtimePrincipalId)) {
-  name: guid(keyVault.id, runtimePrincipalId, secretsUserRoleId)
-  scope: keyVault
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', secretsUserRoleId)
-    principalId: runtimePrincipalId
-    principalType: 'ServicePrincipal'
   }
 }
 

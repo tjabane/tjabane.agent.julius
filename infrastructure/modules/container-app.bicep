@@ -2,7 +2,6 @@ param appName string
 param location string
 param keyVaultName string
 param userAssignedIdentityId string
-param userAssignedIdentityPrincipalId string
 param investecSandbox bool
 param appEnvironment string
 param emailSenderAddress string
@@ -15,7 +14,7 @@ var environmentName = 'cae-${appName}-${uniqueString(resourceGroup().id)}'
 var containerAppName = 'ca-${appName}-${uniqueString(resourceGroup().id)}'
 var acrName = 'acr${replace(take(appName, 12), '-', '')}${take(uniqueString(resourceGroup().id), 8)}'
 var keyVaultBaseUrl = 'https://${keyVaultName}${az.environment().suffixes.keyvaultDns}/secrets'
-var acrPullRoleId = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
+var registryPasswordSecretName = 'acr-password'
 
 resource registry 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' = {
   name: acrName
@@ -24,17 +23,7 @@ resource registry 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' = 
     name: 'Basic'
   }
   properties: {
-    adminUserEnabled: false
-  }
-}
-
-resource acrPullAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(registry.id, userAssignedIdentityPrincipalId, acrPullRoleId)
-  scope: registry
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrPullRoleId)
-    principalId: userAssignedIdentityPrincipalId
-    principalType: 'ServicePrincipal'
+    adminUserEnabled: true
   }
 }
 
@@ -71,10 +60,16 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       registries: [
         {
           server: registry.properties.loginServer
-          identity: userAssignedIdentityId
+          username: registry.name
+          passwordSecretRef: registryPasswordSecretName
         }
       ]
-      secrets: configureRuntimeSecrets ? [
+      secrets: concat([
+        {
+          name: registryPasswordSecretName
+          value: registry.listCredentials().passwords[0].value
+        }
+      ], configureRuntimeSecrets ? [
         {
           name: 'openai-api-key'
           keyVaultUrl: '${keyVaultBaseUrl}/openai-api-key'
@@ -125,7 +120,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
           keyVaultUrl: '${keyVaultBaseUrl}/email-recipient-address'
           identity: userAssignedIdentityId
         }
-      ] : []
+      ] : [])
     }
     template: {
       containers: [
@@ -225,9 +220,6 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       }
     }
   }
-  dependsOn: [
-    acrPullAssignment
-  ]
 }
 
 output url string = 'https://${containerApp.properties.configuration.ingress.fqdn}'

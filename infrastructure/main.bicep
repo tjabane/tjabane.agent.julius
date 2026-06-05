@@ -65,15 +65,6 @@ module keyvault 'modules/keyvault.bicep' = {
     name: keyVaultName
     location: location
     deployingUserObjectId: deployingUserObjectId
-  }
-}
-
-module keyvaultRoleAssignment 'modules/keyvault.bicep' = {
-  name: 'keyvaultContainerAppAccess'
-  params: {
-    name: keyvault.outputs.name
-    location: location
-    deployingUserObjectId: deployingUserObjectId
     runtimePrincipalId: runtimeIdentity.properties.principalId
   }
 }
@@ -85,16 +76,12 @@ module containerApp 'modules/container-app.bicep' = {
     location: location
     keyVaultName: keyvault.outputs.name
     userAssignedIdentityId: runtimeIdentity.id
-    userAssignedIdentityPrincipalId: runtimeIdentity.properties.principalId
     investecSandbox: investecSandbox
     appEnvironment: appEnvironment
     emailSenderAddress: communication.outputs.senderAddress
     containerImage: containerImage
     configureRuntimeSecrets: configureRuntimeSecrets
   }
-  dependsOn: [
-    keyvaultRoleAssignment
-  ]
 }
 
 output containerAppUrl string = containerApp.outputs.url
