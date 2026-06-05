@@ -214,7 +214,7 @@ jobs:
             --value "$acs_connection_string" \
             --output none
 
-      - name: Populate external Key Vault secrets
+      - name: Validate and populate external Key Vault secrets
         env:
           KEY_VAULT_NAME: ${{ steps.infra.outputs.key_vault_name }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -226,14 +226,39 @@ jobs:
           TWILIO_WHATSAPP_NUMBER: ${{ secrets.TWILIO_WHATSAPP_NUMBER }}
           EMAIL_RECIPIENT_ADDRESS: ${{ secrets.EMAIL_RECIPIENT_ADDRESS }}
         run: |
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name openai-api-key --value "$OPENAI_API_KEY" --output none
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name investec-client-id --value "$INVESTEC_CLIENT_ID" --output none
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name investec-client-secret --value "$INVESTEC_CLIENT_SECRET" --output none
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name investec-api-key --value "$INVESTEC_API_KEY" --output none
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name twilio-account-sid --value "$TWILIO_ACCOUNT_SID" --output none
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name twilio-auth-token --value "$TWILIO_AUTH_TOKEN" --output none
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name twilio-whatsapp-number --value "$TWILIO_WHATSAPP_NUMBER" --output none
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name email-recipient-address --value "$EMAIL_RECIPIENT_ADDRESS" --output none
+          missing=()
+          for secret_name in \
+            OPENAI_API_KEY \
+            INVESTEC_CLIENT_ID \
+            INVESTEC_CLIENT_SECRET \
+            INVESTEC_API_KEY \
+            TWILIO_ACCOUNT_SID \
+            TWILIO_AUTH_TOKEN \
+            TWILIO_WHATSAPP_NUMBER \
+            EMAIL_RECIPIENT_ADDRESS
+          do
+            if [ -z "${!secret_name}" ]; then
+              missing+=("$secret_name")
+            fi
+          done
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing required GitHub secrets for $APP_ENV deployment: ${missing[*]}"
+            exit 1
+          fi
+
+          set_secret() {
+            az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name "$1" --value "$2" --output none
+          }
+
+          set_secret openai-api-key "$OPENAI_API_KEY"
+          set_secret investec-client-id "$INVESTEC_CLIENT_ID"
+          set_secret investec-client-secret "$INVESTEC_CLIENT_SECRET"
+          set_secret investec-api-key "$INVESTEC_API_KEY"
+          set_secret twilio-account-sid "$TWILIO_ACCOUNT_SID"
+          set_secret twilio-auth-token "$TWILIO_AUTH_TOKEN"
+          set_secret twilio-whatsapp-number "$TWILIO_WHATSAPP_NUMBER"
+          set_secret email-recipient-address "$EMAIL_RECIPIENT_ADDRESS"
 
       - name: Deploy to Azure Functions
         uses: azure/functions-action@bc63708cc6539760eea18d8a7de4ce8ef5fdf593 # v1
@@ -331,7 +356,7 @@ jobs:
             --value "$acs_connection_string" \
             --output none
 
-      - name: Populate external Key Vault secrets
+      - name: Validate and populate external Key Vault secrets
         env:
           KEY_VAULT_NAME: ${{ steps.infra.outputs.key_vault_name }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -343,14 +368,39 @@ jobs:
           TWILIO_WHATSAPP_NUMBER: ${{ secrets.TWILIO_WHATSAPP_NUMBER }}
           EMAIL_RECIPIENT_ADDRESS: ${{ secrets.EMAIL_RECIPIENT_ADDRESS }}
         run: |
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name openai-api-key --value "$OPENAI_API_KEY" --output none
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name investec-client-id --value "$INVESTEC_CLIENT_ID" --output none
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name investec-client-secret --value "$INVESTEC_CLIENT_SECRET" --output none
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name investec-api-key --value "$INVESTEC_API_KEY" --output none
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name twilio-account-sid --value "$TWILIO_ACCOUNT_SID" --output none
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name twilio-auth-token --value "$TWILIO_AUTH_TOKEN" --output none
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name twilio-whatsapp-number --value "$TWILIO_WHATSAPP_NUMBER" --output none
-          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name email-recipient-address --value "$EMAIL_RECIPIENT_ADDRESS" --output none
+          missing=()
+          for secret_name in \
+            OPENAI_API_KEY \
+            INVESTEC_CLIENT_ID \
+            INVESTEC_CLIENT_SECRET \
+            INVESTEC_API_KEY \
+            TWILIO_ACCOUNT_SID \
+            TWILIO_AUTH_TOKEN \
+            TWILIO_WHATSAPP_NUMBER \
+            EMAIL_RECIPIENT_ADDRESS
+          do
+            if [ -z "${!secret_name}" ]; then
+              missing+=("$secret_name")
+            fi
+          done
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing required GitHub secrets for $APP_ENV deployment: ${missing[*]}"
+            exit 1
+          fi
+
+          set_secret() {
+            az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name "$1" --value "$2" --output none
+          }
+
+          set_secret openai-api-key "$OPENAI_API_KEY"
+          set_secret investec-client-id "$INVESTEC_CLIENT_ID"
+          set_secret investec-client-secret "$INVESTEC_CLIENT_SECRET"
+          set_secret investec-api-key "$INVESTEC_API_KEY"
+          set_secret twilio-account-sid "$TWILIO_ACCOUNT_SID"
+          set_secret twilio-auth-token "$TWILIO_AUTH_TOKEN"
+          set_secret twilio-whatsapp-number "$TWILIO_WHATSAPP_NUMBER"
+          set_secret email-recipient-address "$EMAIL_RECIPIENT_ADDRESS"
 
       - name: Deploy to Azure Functions
         uses: azure/functions-action@bc63708cc6539760eea18d8a7de4ce8ef5fdf593 # v1
