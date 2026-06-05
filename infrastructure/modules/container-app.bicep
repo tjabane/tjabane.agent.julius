@@ -30,6 +30,7 @@ resource registry 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' = 
 resource environment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: environmentName
   location: location
+  properties: {}
 }
 
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
