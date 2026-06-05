@@ -16,3 +16,5 @@ local.settings.json
 .env
 .vscode/
 .python_packages
+node_modules
+.deepeval/

@@ -130,6 +130,19 @@ uv run pytest tests\krabs_e2e_tests -m e2e_live
 
 The live E2E suite is sandbox-only. It refuses non-sandbox `INVESTEC_URL` values so development runs cannot accidentally target production.
 
+### LLM evals
+
+DeepEval checks live agent behavior with LLM-as-judge metrics. They are opt-in because they call OpenAI for both the app response and the judge model:
+
+```powershell
+$env:KRABS_RUN_DEEPEVAL="true"
+$env:OPENAI_EVAL_APP_MODEL="gpt-4o-mini"
+$env:OPENAI_EVAL_JUDGE_MODEL="gpt-4o-mini"
+uv run deepeval test run evals\test_agent_payment_safety.py
+```
+
+Current evals cover the payment safety rule that payment or transfer requests must ask for explicit confirmation before execution.
+
 Or run the API in Docker for local development:
 
 ```powershell
