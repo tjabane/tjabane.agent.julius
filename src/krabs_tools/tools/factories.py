@@ -1,55 +1,70 @@
-from krabs_services.finance.investec_client import (
-    InvestecAccountsClient,
-    InvestecClient,
-    InvestecDocumentsClient,
-    InvestecPaymentsClient,
-)
+from collections.abc import Callable
+
+from krabs_domain.contracts import BankingClient, EmailService
+from krabs_domain.repositories.reporting import ReportRepository
 from krabs_tools.registry import Tool
-from krabs_tools.tools.investec_accounts import (
+from krabs_tools.tools.banking import (
     GetAccountsTool,
     GetBalanceTool,
-    GetBulkBalancesTool,
-    GetPendingTransactionsTool,
-    GetTransactionsTool,
-)
-from krabs_tools.tools.investec_documents import GetDocumentsTool, GetDocumentTool
-from krabs_tools.tools.investec_payments import (
     GetBeneficiariesTool,
     GetBeneficiaryCategoriesTool,
+    GetBulkBalancesTool,
+    GetDocumentsTool,
+    GetDocumentTool,
+    GetPendingTransactionsTool,
+    GetTransactionsTool,
     PayBeneficiariesTool,
     TransferFundsTool,
 )
+from krabs_tools.tools.datetime import GetCurrentDateTimeTool, ResolveDateRangeTool
+from krabs_tools.tools.reporting import SendReportEmailTool
 
 
-def create_investec_account_tools(accounts_client: InvestecAccountsClient) -> list[Tool]:
+def create_banking_account_tools(banking_client: BankingClient) -> list[Tool]:
     return [
-        GetAccountsTool(accounts_client),
-        GetBalanceTool(accounts_client),
-        GetBulkBalancesTool(accounts_client),
-        GetTransactionsTool(accounts_client),
-        GetPendingTransactionsTool(accounts_client),
+        GetAccountsTool(banking_client),
+        GetBalanceTool(banking_client),
+        GetBulkBalancesTool(banking_client),
+        GetTransactionsTool(banking_client),
+        GetPendingTransactionsTool(banking_client),
     ]
 
 
-def create_investec_document_tools(documents_client: InvestecDocumentsClient) -> list[Tool]:
+def create_banking_document_tools(banking_client: BankingClient) -> list[Tool]:
     return [
-        GetDocumentsTool(documents_client),
-        GetDocumentTool(documents_client),
+        GetDocumentsTool(banking_client),
+        GetDocumentTool(banking_client),
     ]
 
 
-def create_investec_payment_tools(payments_client: InvestecPaymentsClient) -> list[Tool]:
+def create_banking_payment_tools(banking_client: BankingClient) -> list[Tool]:
     return [
-        TransferFundsTool(payments_client),
-        GetBeneficiariesTool(payments_client),
-        GetBeneficiaryCategoriesTool(payments_client),
-        PayBeneficiariesTool(payments_client),
+        TransferFundsTool(banking_client),
+        GetBeneficiariesTool(banking_client),
+        GetBeneficiaryCategoriesTool(banking_client),
+        PayBeneficiariesTool(banking_client),
     ]
 
 
-def create_investec_tools(investec_client: InvestecClient) -> list[Tool]:
+def create_banking_tools(banking_client: BankingClient) -> list[Tool]:
     return [
-        *create_investec_account_tools(investec_client.accounts),
-        *create_investec_document_tools(investec_client.documents),
-        *create_investec_payment_tools(investec_client.payments),
+        *create_banking_account_tools(banking_client),
+        *create_banking_document_tools(banking_client),
+        *create_banking_payment_tools(banking_client),
+    ]
+
+
+def create_datetime_tools() -> list[Tool]:
+    return [
+        GetCurrentDateTimeTool(),
+        ResolveDateRangeTool(),
+    ]
+
+
+def create_reporting_tools(
+    email_service: EmailService,
+    report_repository: ReportRepository | Callable[[], ReportRepository],
+) -> list[Tool]:
+    return [
+        SendReportEmailTool(email_service, report_repository),
     ]

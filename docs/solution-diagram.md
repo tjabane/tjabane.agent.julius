@@ -1,6 +1,6 @@
 # Mr Krabs Solution Diagram
 
-This diagram shows the deployed solution components and the main runtime paths for WhatsApp requests, banking/reporting tools, scheduled reports, and operational checks.
+This diagram shows the deployed solution components and the main runtime paths for WhatsApp requests, banking/reporting tools, and operational checks.
 
 ```mermaid
 flowchart TB
@@ -21,12 +21,11 @@ flowchart TB
             webhook[POST /webhook<br/>POST /api/webhook]
             health[GET /ping<br/>GET /health]
             agent[Mr Krabs agent runtime]
-            scheduler[Background scheduler<br/>every 5 minutes]
             registry[Tool registry<br/>Responses API functions]
-            tools[Tool adapters<br/>Investec, dates, reporting, knowledge]
+            tools[Tool adapters<br/>banking and dates]
         end
 
-        cosmos[(Azure Cosmos DB<br/>sessions, memories, skills,<br/>schedules, sent reports)]
+        cosmos[(Azure Cosmos DB<br/>sessions, memories, skills)]
         keyVault[Azure Key Vault<br/>configuration and secrets]
         acr[Azure Container Registry]
     end
@@ -52,13 +51,8 @@ flowchart TB
     registry --> tools
     tools --> investec
     tools --> cosmos
-    tools --> email
     fastapi --> twilio
     twilio --> user
-
-    scheduler --> agent
-    scheduler --> cosmos
-    scheduler --> email
 
     operator --> health
     health --> cosmos
@@ -82,7 +76,6 @@ sequenceDiagram
     participant Tools as Tool registry/adapters
     participant Investec as Investec API
     participant Cosmos as Cosmos DB
-    participant Email as ACS Email
 
     User->>Twilio: Send WhatsApp message
     Twilio->>API: POST /webhook
@@ -95,13 +88,9 @@ sequenceDiagram
         Tools->>Investec: Accounts, balances, transactions, documents, payments, transfers
         Investec-->>Tools: Banking response
     end
-    alt Memory, skills, schedules, or report records needed
+    alt Memory or skills needed
         Tools->>Cosmos: Read or write stored state
         Cosmos-->>Tools: Stored data
-    end
-    alt Email report requested
-        Tools->>Email: Send plain-text report
-        Email-->>Tools: Delivery result
     end
     Tools-->>Agent: Tool result
     Agent->>OpenAI: Continue response with tool output
@@ -111,37 +100,15 @@ sequenceDiagram
     Twilio-->>User: Deliver response
 ```
 
-## Scheduled Report Flow
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Scheduler
-    participant Cosmos as Cosmos DB
-    participant Agent as Mr Krabs agent
-    participant Investec as Investec API
-    participant Email as ACS Email
-
-    Scheduler->>Cosmos: Find due enabled schedules
-    loop For each due schedule
-        Scheduler->>Agent: Run saved report query
-        Agent->>Investec: Fetch accounts and transactions
-        Investec-->>Agent: Banking data
-        Agent->>Email: Send report
-        Email-->>Agent: Delivery result
-        Agent->>Cosmos: Save sent report record
-        Scheduler->>Cosmos: Advance next run
-    end
-```
-
 ## Tool Composition
 
-Investec tools are composed explicitly at the application boundary:
+Banking tools are composed explicitly at the application boundary:
 
-1. `InvestecClient` owns the HTTP-backed account, document, and payment clients.
-2. `krabs_tools.tools.factories` groups concrete tool adapters by dependency: `create_investec_account_tools`, `create_investec_document_tools`, and `create_investec_payment_tools`.
-3. `create_investec_tools` combines those groups for the normal app path.
-4. `ToolRegistry.register_many` registers the resulting tools for the Responses API.
-5. `krabs_agent.agent_runner` and `scripts/agent_chat.py` both use the same factory path.
+1. `krabs_domain.contracts.BankingClient` defines the banking capability contract.
+2. `InvestecClient` is the current HTTP-backed implementation of that contract.
+3. `krabs_tools.tools.factories` groups tool adapters by capability: `create_banking_account_tools`, `create_banking_document_tools`, and `create_banking_payment_tools`.
+4. `create_banking_tools` combines those groups for the normal app path.
+5. `ToolRegistry.register_many` registers the resulting tools for the Responses API.
+6. `krabs_agent.agent_runner` and `scripts/agent_chat.py` both use the same factory path.
 
 This keeps external dependencies visible while avoiding one-by-one registration in every entry point.

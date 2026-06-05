@@ -4,9 +4,8 @@ from unittest.mock import MagicMock, patch
 
 from pydantic import BaseModel, ConfigDict
 
-from krabs_agent.agent_runner import run, run_scheduled
-from krabs_agent.library.agent import Agent
-from krabs_agent.tools.deps import ToolDeps
+from krabs_agent.agent_runner import run
+from krabs_agent.runtime import Agent
 from krabs_domain.models.agent import Session
 from krabs_tools.registry import ToolRegistry
 
@@ -109,14 +108,6 @@ class TestRun:
             {"role": "user", "content": "second"},
         ]
 
-    def test_accepts_tool_deps_without_using_legacy_dispatch(self):
-        client = MagicMock()
-        client.responses.create.return_value = _stop_response("Done.")
-
-        reply = run("+27831234567", "hello", client=client, sessions=FakeSessions(), tool_deps=ToolDeps())
-
-        assert reply == "Done."
-
     @patch("krabs_agent.agent_runner.Agent")
     def test_passes_tool_registry_to_agent(self, agent_class):
         client = MagicMock()
@@ -181,32 +172,3 @@ class TestAgentToolRegistry:
             }
         ]
 
-
-class TestRunScheduled:
-    def test_returns_reply_on_stop(self):
-        client = MagicMock()
-        client.responses.create.return_value = _stop_response("Report done.")
-
-        result = run_scheduled("sched-1", "send balance summary", client=client)
-
-        assert result == "Report done."
-
-    def test_sends_query_to_agent_without_persisting_session(self):
-        client = MagicMock()
-        client.responses.create.return_value = _stop_response("Done.")
-
-        run_scheduled("sched-1", "send report", client=client, tool_deps=ToolDeps())
-
-        request = client.responses.create.call_args.kwargs
-        assert request["input"][-1] == {"role": "user", "content": "send report"}
-
-    @patch("krabs_agent.agent_runner.Agent")
-    def test_passes_tool_registry_to_scheduled_agent(self, agent_class):
-        client = MagicMock()
-        agent = MagicMock()
-        agent.send_message.return_value = "Done."
-        agent_class.return_value = agent
-
-        run_scheduled("sched-1", "send report", client=client)
-
-        assert agent_class.call_args.kwargs["tool_registry"] is not None

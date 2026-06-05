@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from krabs_domain.banking import BankingClient
+from krabs_domain.contracts import BankingClient
 from krabs_services.finance.investec_client import InvestecClient
 
 

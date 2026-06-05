@@ -1,38 +1,35 @@
-from krabs_services.communication.email_service import InMemoryEmailService
 from krabs_services.communication.providers import (
     get_message_sender,
     get_report_sender,
     reset_communication_providers,
 )
-from krabs_services.communication.twilio_client import InMemoryTwilioClient
 
 
-def test_local_environment_uses_in_memory_clients(monkeypatch):
-    monkeypatch.setenv("APP_ENV", "local")
-    monkeypatch.delenv("COMMUNICATION_PROVIDER", raising=False)
-    reset_communication_providers()
-
-    assert isinstance(get_message_sender(), InMemoryTwilioClient)
-    assert isinstance(get_report_sender(), InMemoryEmailService)
-
-
-def test_external_provider_uses_external_clients(monkeypatch, mocker):
-    monkeypatch.setenv("COMMUNICATION_PROVIDER", "external")
+def test_get_message_sender_uses_twilio_client(mocker):
     reset_communication_providers()
     twilio_cls = mocker.patch("krabs_services.communication.providers.TwilioClient", autospec=True)
-    email_cls = mocker.patch("krabs_services.communication.providers.EmailService", autospec=True)
 
     get_message_sender()
-    get_report_sender()
 
     twilio_cls.assert_called_once_with()
+
+
+def test_get_report_sender_uses_azure_email_service(mocker):
+    reset_communication_providers()
+    email_cls = mocker.patch("krabs_services.communication.providers.AzureEmailService", autospec=True)
+
+    get_report_sender()
+
     email_cls.assert_called_once_with()
 
 
-def test_memory_provider_overrides_non_local_environment(monkeypatch):
-    monkeypatch.setenv("APP_ENV", "dev")
-    monkeypatch.setenv("COMMUNICATION_PROVIDER", "memory")
+def test_provider_instances_are_cached(mocker):
     reset_communication_providers()
+    twilio_cls = mocker.patch("krabs_services.communication.providers.TwilioClient", autospec=True)
+    email_cls = mocker.patch("krabs_services.communication.providers.AzureEmailService", autospec=True)
 
-    assert isinstance(get_message_sender(), InMemoryTwilioClient)
-    assert isinstance(get_report_sender(), InMemoryEmailService)
+    assert get_message_sender() is get_message_sender()
+    assert get_report_sender() is get_report_sender()
+
+    twilio_cls.assert_called_once_with()
+    email_cls.assert_called_once_with()
