@@ -107,6 +107,8 @@ jobs:
     name: SonarCloud scan
     needs: test-unit
     runs-on: ubuntu-latest
+    env:
+      SONAR_SCANNER_SKIP_JRE_PROVISIONING: "true"
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
