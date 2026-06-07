@@ -105,7 +105,7 @@ CHECKS: tuple[HealthCheck, ...] = (
     HealthCheck("cosmos_db", _check_cosmos),
     HealthCheck("investec_api", _check_investec),
     HealthCheck("investec_reachable", _check_investec_reachable),
-    HealthCheck("openai", _check_openai),
+    HealthCheck("openai_api", _check_openai),
     HealthCheck("twilio", _check_twilio),
     HealthCheck("acs_email_config", _check_acs_email_config),
 )
