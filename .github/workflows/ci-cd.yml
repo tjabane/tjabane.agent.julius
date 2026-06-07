@@ -39,8 +39,7 @@ jobs:
     env:
       KEY_VAULT_NAME: ${{ needs.deploy-dev.outputs.key_vault_name }}
       INVESTEC_SANDBOX: "true"
-      INVESTEC_SANDBOX_URL: https://openapisandbox.investec.com
-      INVESTEC_PROD_URL: https://openapi.investec.com
+      INVESTEC_URL: https://openapisandbox.investec.com
       INVESTEC_TIMEOUT_SECONDS: "5.0"
       COSMOS_DATABASE: krabs
       EMAIL_SENDER_ADDRESS: ${{ needs.deploy-dev.outputs.email_sender_address }}
@@ -97,6 +96,29 @@ jobs:
 
       - name: Run integration tests
         run: uv run pytest tests/krabs_integration_tests/ -v
+
+  test-e2e:
+    name: End-to-end tests against dev
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    environment: dev
+
+    env:
+      E2E_BASE_URL: ${{ needs.deploy-dev.outputs.container_app_url }}
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a # v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run end-to-end tests
+        run: uv run pytest tests/krabs_e2e_tests/ -v
 
   codeql:
     name: CodeQL analysis
@@ -170,6 +192,7 @@ jobs:
     environment: dev
     outputs:
       key_vault_name: ${{ steps.infra.outputs.key_vault_name }}
+      container_app_url: ${{ steps.infra.outputs.container_app_url }}
       email_sender_address: ${{ steps.infra.outputs.email_sender_address }}
     env:
       AZURE_RESOURCE_GROUP: rg-krabs-dev
@@ -218,6 +241,7 @@ jobs:
             --output json)"
 
           echo "key_vault_name=$(jq -r '.keyVaultName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
+          echo "container_app_url=$(jq -r '.containerAppUrl.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
           echo "cosmos_account_name=$(jq -r '.cosmosAccountName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
           echo "acs_name=$(jq -r '.acsName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
           echo "acr_name=$(jq -r '.acrName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
@@ -351,7 +375,7 @@ jobs:
 
   deploy-prod:
     name: Deploy to prod
-    needs: test-integration
+    needs: [test-integration, test-e2e]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: prod
