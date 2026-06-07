@@ -30,24 +30,20 @@ jobs:
           path: coverage.xml
 
   test-integration:
-    name: Integration tests
+    name: Integration tests against dev
+    needs: deploy-dev
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' || github.event_name == 'pull_request'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    environment: dev
 
     env:
-      INVESTEC_CLIENT_ID: ${{ secrets.INVESTEC_CLIENT_ID }}
-      INVESTEC_CLIENT_SECRET: ${{ secrets.INVESTEC_CLIENT_SECRET }}
-      INVESTEC_API_KEY: ${{ secrets.INVESTEC_API_KEY }}
+      KEY_VAULT_NAME: ${{ needs.deploy-dev.outputs.key_vault_name }}
       INVESTEC_SANDBOX: "true"
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      COSMOS_CONNECTION_STRING: ${{ secrets.COSMOS_CONNECTION_STRING }}
+      INVESTEC_SANDBOX_URL: https://openapisandbox.investec.com
+      INVESTEC_PROD_URL: https://openapi.investec.com
+      INVESTEC_TIMEOUT_SECONDS: "5.0"
       COSMOS_DATABASE: krabs
-      TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
-      TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
-      TWILIO_WHATSAPP_NUMBER: ${{ secrets.TWILIO_WHATSAPP_NUMBER }}
-      AZURE_COMMUNICATION_CONNECTION_STRING: ${{ secrets.AZURE_COMMUNICATION_CONNECTION_STRING }}
-      EMAIL_SENDER_ADDRESS: ${{ secrets.EMAIL_SENDER_ADDRESS }}
-      EMAIL_RECIPIENT_ADDRESS: ${{ secrets.EMAIL_RECIPIENT_ADDRESS }}
+      EMAIL_SENDER_ADDRESS: ${{ needs.deploy-dev.outputs.email_sender_address }}
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -58,6 +54,46 @@ jobs:
 
       - name: Install dependencies
         run: uv sync
+
+      - name: Login to Azure
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Load dev secrets from Key Vault
+        run: |
+          set -euo pipefail
+
+          export_secret() {
+            local env_name="$1"
+            local key_vault_secret_name="$2"
+            local value
+
+            value="$(az keyvault secret show \
+              --vault-name "$KEY_VAULT_NAME" \
+              --name "$key_vault_secret_name" \
+              --query value \
+              --output tsv)"
+
+            if [ -z "$value" ]; then
+              echo "::error::Key Vault secret '$key_vault_secret_name' is empty or missing."
+              exit 1
+            fi
+
+            echo "::add-mask::$value"
+            echo "$env_name=$value" >> "$GITHUB_ENV"
+          }
+
+          export_secret OPENAI_API_KEY openai-api-key
+          export_secret INVESTEC_CLIENT_ID investec-client-id
+          export_secret INVESTEC_CLIENT_SECRET investec-client-secret
+          export_secret INVESTEC_API_KEY investec-api-key
+          export_secret COSMOS_CONNECTION_STRING cosmos-connection-string
+          export_secret TWILIO_ACCOUNT_SID twilio-account-sid
+          export_secret TWILIO_AUTH_TOKEN twilio-auth-token
+          export_secret TWILIO_WHATSAPP_NUMBER twilio-whatsapp-number
+          export_secret AZURE_COMMUNICATION_CONNECTION_STRING acs-connection-string
+          export_secret EMAIL_RECIPIENT_ADDRESS email-recipient-address
 
       - name: Run integration tests
         run: uv run pytest tests/krabs_integration_tests/ -v
@@ -128,10 +164,13 @@ jobs:
 
   deploy-dev:
     name: Deploy to dev
-    needs: [test-unit, test-integration, sonarcloud, security-scan, codeql]
+    needs: [test-unit, sonarcloud, security-scan, codeql]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: dev
+    outputs:
+      key_vault_name: ${{ steps.infra.outputs.key_vault_name }}
+      email_sender_address: ${{ steps.infra.outputs.email_sender_address }}
     env:
       AZURE_RESOURCE_GROUP: rg-krabs-dev
       AZURE_LOCATION: southafricanorth
@@ -182,6 +221,7 @@ jobs:
           echo "key_vault_name=$(jq -r '.keyVaultName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
           echo "cosmos_account_name=$(jq -r '.cosmosAccountName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
           echo "acs_name=$(jq -r '.acsName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
+          echo "email_sender_address=$(jq -r '.emailSenderAddress.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
 
       - name: Populate generated Key Vault secrets
         env:
@@ -226,6 +266,8 @@ jobs:
           TWILIO_WHATSAPP_NUMBER: ${{ secrets.TWILIO_WHATSAPP_NUMBER }}
           EMAIL_RECIPIENT_ADDRESS: ${{ secrets.EMAIL_RECIPIENT_ADDRESS }}
         run: |
+          set -euo pipefail
+
           missing=()
           for secret_name in \
             OPENAI_API_KEY \
@@ -237,7 +279,7 @@ jobs:
             TWILIO_WHATSAPP_NUMBER \
             EMAIL_RECIPIENT_ADDRESS
           do
-            if [ -z "${!secret_name}" ]; then
+            if [ -z "${!secret_name:-}" ]; then
               missing+=("$secret_name")
             fi
           done
@@ -248,7 +290,15 @@ jobs:
           fi
 
           set_secret() {
-            az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name "$1" --value "$2" --output none
+            local secret_name="$1"
+            local secret_value="$2"
+
+            if [ -z "$secret_value" ]; then
+              echo "::error::Cannot set Key Vault secret '$secret_name' because the mapped GitHub secret is empty."
+              exit 1
+            fi
+
+            az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name "$secret_name" --value="$secret_value" --output none
           }
 
           set_secret openai-api-key "$OPENAI_API_KEY"
@@ -270,7 +320,7 @@ jobs:
 
   deploy-prod:
     name: Deploy to prod
-    needs: deploy-dev
+    needs: test-integration
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: prod
@@ -368,6 +418,8 @@ jobs:
           TWILIO_WHATSAPP_NUMBER: ${{ secrets.TWILIO_WHATSAPP_NUMBER }}
           EMAIL_RECIPIENT_ADDRESS: ${{ secrets.EMAIL_RECIPIENT_ADDRESS }}
         run: |
+          set -euo pipefail
+
           missing=()
           for secret_name in \
             OPENAI_API_KEY \
@@ -379,7 +431,7 @@ jobs:
             TWILIO_WHATSAPP_NUMBER \
             EMAIL_RECIPIENT_ADDRESS
           do
-            if [ -z "${!secret_name}" ]; then
+            if [ -z "${!secret_name:-}" ]; then
               missing+=("$secret_name")
             fi
           done
@@ -390,7 +442,15 @@ jobs:
           fi
 
           set_secret() {
-            az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name "$1" --value "$2" --output none
+            local secret_name="$1"
+            local secret_value="$2"
+
+            if [ -z "$secret_value" ]; then
+              echo "::error::Cannot set Key Vault secret '$secret_name' because the mapped GitHub secret is empty."
+              exit 1
+            fi
+
+            az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name "$secret_name" --value="$secret_value" --output none
           }
 
           set_secret openai-api-key "$OPENAI_API_KEY"

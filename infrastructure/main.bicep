@@ -88,6 +88,7 @@ output containerAppUrl string = containerApp.outputs.url
 output keyVaultName string = keyvault.outputs.name
 output cosmosAccountName string = cosmos.outputs.accountName
 output acsName string = communication.outputs.acsName
+output emailSenderAddress string = communication.outputs.senderAddress
 output containerAppName string = containerApp.outputs.name
 output containerAppsEnvironmentName string = containerApp.outputs.environmentName
 output acrName string = containerApp.outputs.acrName
