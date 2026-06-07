@@ -4,7 +4,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from httpx import HTTPStatusError
 
-from krabs_services.finance.investec_client import InvestecClient
+from krabs_services.finance.investec_client import (
+    InvestecClient,
+    get_investec_base_url,
+    get_investec_timeout_seconds,
+)
 
 
 def _utcnow():
@@ -13,6 +17,30 @@ def _utcnow():
 
 ACCOUNT_ID = "172878438332791809002"
 SANDBOX_BASE = "https://openapisandbox.investec.com"
+
+
+class TestInvestecConfiguration:
+    def test_reads_base_url_from_environment(self, monkeypatch):
+        monkeypatch.setenv("INVESTEC_URL", "https://investec.example.test/")
+
+        assert get_investec_base_url() == "https://investec.example.test"
+
+    def test_requires_base_url(self, monkeypatch):
+        monkeypatch.delenv("INVESTEC_URL", raising=False)
+
+        with pytest.raises(KeyError):
+            get_investec_base_url()
+
+    def test_reads_timeout_from_environment(self, monkeypatch):
+        monkeypatch.setenv("INVESTEC_TIMEOUT_SECONDS", "12.5")
+
+        assert get_investec_timeout_seconds() == 12.5
+
+    def test_requires_timeout(self, monkeypatch):
+        monkeypatch.delenv("INVESTEC_TIMEOUT_SECONDS", raising=False)
+
+        with pytest.raises(KeyError):
+            get_investec_timeout_seconds()
 
 
 def _mock_response(json_data: dict, status_code: int = 200) -> MagicMock:

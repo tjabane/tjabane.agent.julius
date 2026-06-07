@@ -142,6 +142,14 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               value: string(investecSandbox)
             }
             {
+              name: 'INVESTEC_URL'
+              value: investecSandbox ? 'https://openapisandbox.investec.com' : 'https://openapi.investec.com'
+            }
+            {
+              name: 'INVESTEC_TIMEOUT_SECONDS'
+              value: '5.0'
+            }
+            {
               name: 'COSMOS_DATABASE'
               value: 'krabs'
             }
