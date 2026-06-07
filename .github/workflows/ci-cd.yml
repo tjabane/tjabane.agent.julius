@@ -217,10 +217,11 @@ jobs:
             --query properties.outputs \
             --output json)"
 
-          echo "function_app_name=$(jq -r '.functionAppName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
           echo "key_vault_name=$(jq -r '.keyVaultName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
           echo "cosmos_account_name=$(jq -r '.cosmosAccountName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
           echo "acs_name=$(jq -r '.acsName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
+          echo "acr_name=$(jq -r '.acrName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
+          echo "acr_login_server=$(jq -r '.acrLoginServer.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
           echo "email_sender_address=$(jq -r '.emailSenderAddress.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
 
       - name: Populate generated Key Vault secrets
@@ -310,13 +311,43 @@ jobs:
           set_secret twilio-whatsapp-number "$TWILIO_WHATSAPP_NUMBER"
           set_secret email-recipient-address "$EMAIL_RECIPIENT_ADDRESS"
 
-      - name: Deploy to Azure Functions
-        uses: azure/functions-action@bc63708cc6539760eea18d8a7de4ce8ef5fdf593 # v1
-        with:
-          app-name: ${{ steps.infra.outputs.function_app_name }}
-          package: .
-          scm-do-build-during-deployment: true
-          enable-oryx-build: true
+      - name: Build container image
+        env:
+          ACR_NAME: ${{ steps.infra.outputs.acr_name }}
+          ACR_LOGIN_SERVER: ${{ steps.infra.outputs.acr_login_server }}
+        run: |
+          set -euo pipefail
+
+          image_name="$APP_NAME:${GITHUB_SHA}"
+          image="$ACR_LOGIN_SERVER/$image_name"
+
+          az acr build \
+            --registry "$ACR_NAME" \
+            --image "$image_name" \
+            . \
+            --output none
+
+          echo "container_image=$image" >> "$GITHUB_ENV"
+
+      - name: Apply runtime configuration
+        run: |
+          set -euo pipefail
+
+          deploying_principal_app_id="$(az account show --query user.name --output tsv)"
+          deploying_principal_object_id="$(az ad sp show --id "$deploying_principal_app_id" --query id --output tsv)"
+
+          az deployment group create \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --template-file infrastructure/main.bicep \
+            --parameters \
+              appName="$APP_NAME" \
+              location="$AZURE_LOCATION" \
+              appEnvironment="$APP_ENV" \
+              investecSandbox="$INVESTEC_SANDBOX" \
+              deployingUserObjectId="$deploying_principal_object_id" \
+              containerImage="$container_image" \
+              configureRuntimeSecrets=true \
+            --output none
 
   deploy-prod:
     name: Deploy to prod
@@ -370,10 +401,11 @@ jobs:
             --query properties.outputs \
             --output json)"
 
-          echo "function_app_name=$(jq -r '.functionAppName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
           echo "key_vault_name=$(jq -r '.keyVaultName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
           echo "cosmos_account_name=$(jq -r '.cosmosAccountName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
           echo "acs_name=$(jq -r '.acsName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
+          echo "acr_name=$(jq -r '.acrName.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
+          echo "acr_login_server=$(jq -r '.acrLoginServer.value' <<< "$outputs")" >> "$GITHUB_OUTPUT"
 
       - name: Populate generated Key Vault secrets
         env:
@@ -462,10 +494,40 @@ jobs:
           set_secret twilio-whatsapp-number "$TWILIO_WHATSAPP_NUMBER"
           set_secret email-recipient-address "$EMAIL_RECIPIENT_ADDRESS"
 
-      - name: Deploy to Azure Functions
-        uses: azure/functions-action@bc63708cc6539760eea18d8a7de4ce8ef5fdf593 # v1
-        with:
-          app-name: ${{ steps.infra.outputs.function_app_name }}
-          package: .
-          scm-do-build-during-deployment: true
-          enable-oryx-build: true
+      - name: Build container image
+        env:
+          ACR_NAME: ${{ steps.infra.outputs.acr_name }}
+          ACR_LOGIN_SERVER: ${{ steps.infra.outputs.acr_login_server }}
+        run: |
+          set -euo pipefail
+
+          image_name="$APP_NAME:${GITHUB_SHA}"
+          image="$ACR_LOGIN_SERVER/$image_name"
+
+          az acr build \
+            --registry "$ACR_NAME" \
+            --image "$image_name" \
+            . \
+            --output none
+
+          echo "container_image=$image" >> "$GITHUB_ENV"
+
+      - name: Apply runtime configuration
+        run: |
+          set -euo pipefail
+
+          deploying_principal_app_id="$(az account show --query user.name --output tsv)"
+          deploying_principal_object_id="$(az ad sp show --id "$deploying_principal_app_id" --query id --output tsv)"
+
+          az deployment group create \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --template-file infrastructure/main.bicep \
+            --parameters \
+              appName="$APP_NAME" \
+              location="$AZURE_LOCATION" \
+              appEnvironment="$APP_ENV" \
+              investecSandbox="$INVESTEC_SANDBOX" \
+              deployingUserObjectId="$deploying_principal_object_id" \
+              containerImage="$container_image" \
+              configureRuntimeSecrets=true \
+            --output none
