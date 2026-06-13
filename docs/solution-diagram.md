@@ -25,7 +25,7 @@ flowchart TB
             tools[Tool adapters<br/>banking and dates]
         end
 
-        cosmos[(Azure Cosmos DB<br/>sessions, memories, skills)]
+        cosmos[(Azure Cosmos DB<br/>sessions and reports)]
         keyVault[Azure Key Vault<br/>configuration and secrets]
         acr[Azure Container Registry]
     end
@@ -87,10 +87,6 @@ sequenceDiagram
     alt Banking data needed
         Tools->>Investec: Accounts, balances, transactions, documents, payments, transfers
         Investec-->>Tools: Banking response
-    end
-    alt Memory or skills needed
-        Tools->>Cosmos: Read or write stored state
-        Cosmos-->>Tools: Stored data
     end
     Tools-->>Agent: Tool result
     Agent->>OpenAI: Continue response with tool output

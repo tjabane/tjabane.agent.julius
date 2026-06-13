@@ -1,6 +1,6 @@
 # Mr Krabs Use Cases
 
-Mr Krabs is a WhatsApp-first Investec banking assistant for one user. The user speaks in plain English, the assistant resolves the request, calls the relevant banking, memory, or reporting tools, and replies back through WhatsApp.
+Mr Krabs is a WhatsApp-first Investec banking assistant for one user. The user speaks in plain English, the assistant resolves the request, calls the relevant banking or reporting tools, and replies back through WhatsApp.
 
 The stories below describe the current product behavior as implemented today.
 
@@ -11,7 +11,8 @@ See [use-case-diagrams.md](use-case-diagrams.md) for diagram views of these stor
 - **User**: The Investec account holder using WhatsApp.
 - **Mr Krabs**: The AI banking assistant. It is concise, protective of the user's money, and uses a light Mr Krabs-style voice.
 - **Investec API**: Source of account, balance, transaction, beneficiary, transfer, payment, and document data.
-- **Cosmos DB**: Stores chat sessions, memories, and skills.
+- **External Banks and Platforms**: Future sources of balances, transactions, savings accounts, investments, crypto holdings, loans, and bond data.
+- **Cosmos DB**: Stores chat sessions and reports.
 - **Twilio WhatsApp**: Receives user messages and delivers replies.
 - **Azure Communication Services Email**: Configured for future report delivery.
 
@@ -172,49 +173,167 @@ Mr Krabs resolves the requested period, gathers account and transaction data, an
 
 The user can understand daily or weekly spending at a glance without opening the banking app.
 
-## Story 7: Remembering Preferences
+## Story 7: Receiving a Daily Financial Scoreboard
 
-The user says:
+Every morning, the user wants Mr Krabs to review yesterday's spending without being asked. The report should be easy to read at a glance in WhatsApp, so Mr Krabs generates a financial scoreboard image and sends it proactively.
 
-> "When you report spending, separate groceries from restaurants."
-
-Mr Krabs saves this as a preference. Later, when the user asks for spending reports, the agent searches memory at the start of the conversation and can apply that preference.
+The scoreboard highlights yesterday's total spend, score, status, top merchants, largest expenses, category warnings, unusual items, and a short recommendation for the day ahead.
 
 **Primary flow**
 
-1. The agent recognizes the message as a lasting preference, habit, or fact.
-2. It calls `save_memory`.
-3. On later related requests, it calls `search_memory`.
-4. The remembered preference influences the response or report structure.
+1. A scheduled job runs once each morning in the user's local timezone.
+2. The app resolves "yesterday" into concrete Johannesburg dates.
+3. The agent fetches the relevant accounts and yesterday's transactions.
+4. The report generator analyzes spend level, category patterns, large items, fees, subscriptions, and unusual behavior.
+5. The app renders a compact financial scoreboard image.
+6. The app sends a short WhatsApp message with the image attached.
+7. The generated report and analysis summary are saved to the report store.
 
-**Current capabilities used**
+**Current and planned capabilities used**
 
-- Save memories as preferences, habits, or facts.
-- Search stored memories by keyword.
-- Use remembered context across conversations.
+- Resolve the daily reporting period.
+- Fetch account and transaction data.
+- Analyze yesterday's spend against budgets, goals, and recent behavior.
+- Generate an image-based financial scoreboard for WhatsApp.
+- Proactively send scheduled WhatsApp messages.
+- Store generated reports for later review.
 
-## Story 8: Saving Reusable Analysis Skills
+**Outcome**
 
-After refining a useful report format, the user wants Mr Krabs to reuse it:
+The user receives a daily financial check-in that can be understood in seconds, without opening a spreadsheet or banking app.
 
-> "Use this format for my monthly spending reviews from now on."
+**Guardrail**
 
-Mr Krabs can save a reusable skill with markdown instructions. Before future report or analysis work, it lists available skills and loads a matching one.
+The daily report may criticize spending and recommend corrective action, but it must not move money or make payments without explicit user confirmation.
+
+## Story 8: Receiving a Weekly Financial Review by Email
+
+At the end of each week, the user wants a deeper review of financial behavior. Mr Krabs generates a weekly report and emails it to the user using Azure Communication Services Email.
+
+The weekly report summarizes total spend, income activity, category breakdowns, recurring payments, savings progress, goal progress, overspending risks, and suggested actions for the next week.
 
 **Primary flow**
 
-1. The agent calls `save_skill` with a short name, description, and markdown instructions.
-2. On future report tasks, it calls `list_skills`.
-3. If a relevant skill exists, it calls `load_skill`.
-4. The loaded instructions guide the report structure.
+1. A scheduled job runs at the configured weekly review time.
+2. The app resolves the weekly reporting period.
+3. The agent fetches accounts, balances, and transactions for the period.
+4. The report generator analyzes spending patterns, budget performance, cash flow, and progress toward goals.
+5. The app generates a weekly report suitable for email delivery.
+6. Azure Communication Services Email sends the report to the configured email address.
+7. The generated report metadata and summary are saved to the report store.
 
-**Current capabilities used**
+**Current and planned capabilities used**
 
-- Save or update skills.
-- List available skills.
-- Load a named skill before related work.
+- Resolve weekly reporting periods.
+- Fetch account, balance, and transaction data.
+- Generate deeper weekly analysis from banking data.
+- Email reports through Azure Communication Services Email.
+- Store report history.
 
-## Story 9: Health and Operations
+**Outcome**
+
+The user receives a structured weekly financial review that supports planning, budgeting, and accountability beyond the short daily WhatsApp scoreboard.
+
+**Guardrail**
+
+Weekly reports should separate factual transaction analysis from financial advice. Recommendations should be practical and conservative unless the user has configured explicit goals and thresholds.
+
+## Story 9: Tracking Monthly Net Worth
+
+The user wants to become a millionaire and needs Mr Krabs to track whether their net worth is increasing throughout the year. Once a month, Mr Krabs calculates a net worth snapshot and compares it with previous months.
+
+The net worth view should show total assets, total liabilities, net worth, month-on-month movement, year-to-date movement, and progress toward the user's millionaire goal.
+
+**Primary flow**
+
+1. A scheduled job runs at the configured monthly net worth review time.
+2. The app fetches accounts, balances, and available liability data.
+3. The report generator calculates assets, liabilities, and net worth.
+4. The report generator compares the current snapshot with prior monthly snapshots.
+5. Mr Krabs highlights whether net worth is moving up or down and explains the main drivers.
+6. The app stores the monthly net worth snapshot for year-long trend tracking.
+7. The report is included in the monthly or weekly review, depending on the user's configured preference.
+
+**Current and planned capabilities used**
+
+- Fetch account and balance data.
+- Store monthly net worth snapshots.
+- Track year-to-date net worth movement.
+- Track progress toward a target net worth of at least R1,000,000.
+- Explain changes in net worth using cash flow, debt, savings, and investment movement where data is available.
+
+**Outcome**
+
+The user can see whether their financial position is improving each month and how far they are from becoming a millionaire.
+
+**Guardrail**
+
+Net worth reporting should clearly separate known account balances from manually supplied or estimated assets and liabilities, such as property value, vehicle value, loans, or external investments.
+
+## Story 10: Tracking Multiple Income Streams
+
+The user wants to build wealth through multiple income streams. They currently have two income streams and expect a third income stream soon. Mr Krabs should track income sources separately so the user can see which streams are growing, which are inconsistent, and how total income supports savings, investing, and debt goals.
+
+Income streams may include salary, business income, side projects, dividends, interest, rental income, refunds, or other recurring inflows.
+
+**Primary flow**
+
+1. The user defines or confirms known income streams.
+2. The app classifies incoming transactions by source where possible.
+3. The agent asks the user to label ambiguous income transactions.
+4. The report generator summarizes income by stream for daily, weekly, monthly, and year-to-date views.
+5. Mr Krabs compares income growth against spending growth, savings rate, and net worth progress.
+6. The classified income history is stored for future analysis.
+
+**Current and planned capabilities used**
+
+- Detect and classify incoming transactions.
+- Store user-confirmed income stream mappings.
+- Track income by source over time.
+- Compare income growth with spending, savings, debt, and net worth movement.
+- Use income stream data in financial scoreboards and weekly reviews.
+
+**Outcome**
+
+The user can see whether their income base is becoming stronger and whether extra income is being converted into wealth instead of disappearing into lifestyle spend.
+
+**Guardrail**
+
+Income classification should be explainable and user-correctable. Ambiguous inflows should not be treated as recurring income until confirmed by the user or observed consistently over time.
+
+## Story 11: Tracking External Banks, Investments, Crypto, and Debt
+
+The user wants Mr Krabs to understand their full financial life across multiple institutions, not only Investec. They may open a savings account with another bank, buy stocks, buy bitcoin, hold investment portfolios, or take a bond with a different bank.
+
+Mr Krabs should track these external assets and liabilities so reports, net worth snapshots, and goal planning reflect the user's real financial position.
+
+**Primary flow**
+
+1. The user adds an external financial profile, such as another bank account, investment account, crypto wallet, stock portfolio, savings account, loan, or bond.
+2. The app records whether the profile is connected through an API, imported from a statement, or manually maintained.
+3. The agent fetches, imports, or asks for updated balances depending on the profile type.
+4. The report generator classifies each profile as an asset or liability.
+5. Monthly net worth reports include the external profile with clear source and freshness metadata.
+6. Mr Krabs highlights concentration risk, debt pressure, idle cash, and progress toward savings or investment goals where the data supports it.
+
+**Current and planned capabilities used**
+
+- Store external financial profiles.
+- Track assets across banks, savings accounts, stock portfolios, crypto holdings, and investment platforms.
+- Track liabilities such as bonds, loans, credit cards, overdrafts, and vehicle finance.
+- Support manual balance updates where API access is unavailable.
+- Include data freshness and source labels in reports.
+- Roll external assets and liabilities into net worth tracking.
+
+**Outcome**
+
+The user gets one consolidated financial view across income, cash, investments, crypto, savings, property debt, and other obligations.
+
+**Guardrail**
+
+Mr Krabs may analyze the user's financial position and explain tradeoffs, but buying stocks, buying bitcoin, opening accounts, applying for a bond, or choosing financial products should be treated as user-directed actions. Product recommendations and investment advice should remain conservative, clearly caveated, and separate from factual tracking unless appropriate compliance support exists.
+
+## Story 12: Health and Operations
 
 An operator wants to know whether the service is alive before wiring Twilio to it. They call:
 
@@ -237,7 +356,7 @@ GET /health
 - Dependency health endpoint.
 - Legacy `/api/ping`, `/api/health`, and `/api/webhook` aliases for compatibility.
 
-## Story 10: Local Agent Testing
+## Story 13: Local Agent Testing
 
 A developer wants to test the assistant without sending real WhatsApp messages. They run:
 
@@ -251,7 +370,7 @@ or:
 uv run python scripts\agent_chat.py "show my accounts"
 ```
 
-The script loads the same environment, system prompt, model, and Investec tool factory path used by the deployed app. This lets developers iterate on banking, reporting, and memory behavior before exposing changes through the webhook.
+The script loads the same environment, system prompt, model, and Investec tool factory path used by the deployed app. This lets developers iterate on banking and reporting behavior before exposing changes through the webhook.
 
 ## Cross-Cutting Rules
 
@@ -261,12 +380,19 @@ The script loads the same environment, system prompt, model, and Investec tool f
 - Raw API errors should be translated into plain language.
 - Transfers and beneficiary payments require confirmation before execution.
 - Reports should include clear totals, categories, and notable items.
+- Daily proactive reports should be rendered as image-based financial scoreboards for WhatsApp.
+- Weekly proactive reports should be delivered by email.
+- Monthly net worth tracking should show whether the user's financial position is improving over the year.
+- Long-term goal tracking should support the user's target of reaching at least R1,000,000 net worth.
+- Income streams should be tracked separately so the user can see how each stream contributes to savings, investing, and net worth growth.
+- External banks, savings accounts, investments, crypto holdings, loans, and bonds should be represented as assets or liabilities with clear data source and freshness metadata.
 - WhatsApp identifiers are hashed before being used as tracing session or user IDs.
 - Investec tool adapters should be registered through grouped factory functions so the app runner and local agent chat stay consistent.
 
 ## Current Boundaries
 
-- The assistant is designed for a single user's Investec Private Banking context.
+- The assistant is currently designed for a single user's Investec Private Banking context.
+- Future financial tracking may include external banks, savings accounts, investments, crypto holdings, bonds, loans, and manually supplied financial profiles.
 - The webhook expects Twilio form fields containing a WhatsApp sender and message body.
 - Manual spending scoreboards are returned over WhatsApp in v1.
 - The application relies on configured Investec, OpenAI, Cosmos DB, Twilio, and email environment settings.

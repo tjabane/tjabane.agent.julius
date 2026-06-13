@@ -112,38 +112,6 @@ flowchart LR
 
 ```
 
-## Memory and Reusable Skills
-
-```mermaid
-flowchart LR
-    user[User]
-
-    subgraph assistant[Mr Krabs]
-        remember((Remember preference))
-        searchMemory((Search remembered context))
-        saveSkill((Save reusable analysis skill))
-        listSkills((List available skills))
-        loadSkill((Load matching skill))
-        applyContext((Apply context to answer or report))
-    end
-
-    cosmos[Cosmos DB]
-
-    user --> remember
-    user --> saveSkill
-    user --> applyContext
-
-    remember --> cosmos
-    saveSkill --> cosmos
-
-    applyContext --> searchMemory
-    applyContext --> listSkills
-    listSkills --> loadSkill
-    searchMemory --> cosmos
-    listSkills --> cosmos
-    loadSkill --> cosmos
-```
-
 ## Operations and Local Testing
 
 ```mermaid
