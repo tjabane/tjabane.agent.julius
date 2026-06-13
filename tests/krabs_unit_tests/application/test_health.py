@@ -106,3 +106,15 @@ def test_investec_check_uses_public_auth_check(mock_client_cls):
 
     mock_client_cls.assert_called_once_with(timeout=health._TIMEOUT_SECONDS)
     client.check_auth.assert_called_once_with()
+
+
+@patch("krabs_application.health.OpenAI")
+def test_openai_check_lists_models(mock_openai_cls):
+    client = MagicMock()
+    client.models.list.return_value = iter([{"id": "model"}])
+    mock_openai_cls.return_value = client
+
+    health._check_openai()
+
+    mock_openai_cls.assert_called_once_with(timeout=health._TIMEOUT_SECONDS)
+    client.models.list.assert_called_once_with()

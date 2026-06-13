@@ -58,7 +58,7 @@ def test_dev_health_endpoint_is_healthy():
         "cosmos_db",
         "investec_api",
         "investec_reachable",
-        "openai",
+        "openai_api",
         "twilio",
         "acs_email_config",
     }
