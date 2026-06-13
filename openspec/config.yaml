@@ -1,0 +1,75 @@
+schema: spec-driven
+
+context: |
+  Project: Mr Krabs, a WhatsApp-first personal Investec banking agent for one user.
+  Product goal: let the user ask plain-English questions and perform safe banking/reporting workflows through WhatsApp.
+
+  Primary runtime:
+  - Python 3.12 application managed with uv.
+  - FastAPI webhook deployed to Azure Container Apps.
+  - OpenAI Responses API agent with registered function tools.
+  - Twilio WhatsApp for inbound and outbound messages.
+  - Investec Private Banking API for banking data and money movement.
+  - Azure Cosmos DB for chat sessions and generated reports.
+  - Azure Communication Services Email for planned weekly reports.
+  - Azure Key Vault for secrets and Azure Bicep for infrastructure.
+
+  Local development:
+  - Install dependencies with `uv sync`.
+  - Run local API with `uv run uvicorn krabs_application.fastapi_app:app --app-dir src --reload --port 8000`.
+  - Use `scripts/agent_chat.py` to test the same agent prompt and tool factory path without WhatsApp.
+  - Local Cosmos DB can run through Docker Compose and be initialized with `scripts/init_local_cosmos.py`.
+
+  Architecture:
+  - `krabs_application` owns FastAPI routes, health checks, webhooks, scheduling, and application composition.
+  - `krabs_agent` owns agent runtime, prompts, and the model loop.
+  - `krabs_domain` owns Pydantic models, repository contracts, and domain-facing protocols.
+  - `krabs_services` owns external integrations such as Investec, Twilio, and Azure email.
+  - `krabs_tools` owns Responses API tool schemas, adapters, registry, and grouped factory functions.
+  - Infrastructure lives under `infrastructure/`; local scripts live under `scripts/`; tests live under `tests/`.
+
+  Design principles:
+  - Preserve Clean Architecture boundaries and use explicit dependency injection at composition boundaries.
+  - Keep external dependencies visible through protocols/contracts instead of importing providers deep into domain logic.
+  - Register Investec banking tools through grouped factory functions so the webhook path and `scripts/agent_chat.py` stay aligned.
+  - Keep model-facing tool schemas in Pydantic and separate from dispatcher/provider logic.
+  - Translate raw provider errors into plain-language responses suitable for WhatsApp.
+
+  Product and safety rules:
+  - WhatsApp replies should be short, scannable, and in plain English.
+  - ZAR is the default currency unless account data says otherwise.
+  - Relative dates must be resolved into concrete Johannesburg dates before querying dated financial data.
+  - Beneficiary payments and transfers require explicit user confirmation before execution.
+  - Reports may criticize spending and suggest corrective action, but must not move money without confirmation.
+  - Weekly reports should distinguish factual analysis from financial advice.
+  - External assets, liabilities, and manually supplied values must carry clear source/freshness metadata when introduced.
+  - WhatsApp identifiers are hashed before use as tracing session or user IDs.
+
+  Quality expectations:
+  - Use the `python-clean-architecture-review` Codex skill when writing or reviewing Python changes.
+  - Preferred checks before committing Python changes: `uv run ruff format --check .`, `uv run ruff check .`, `uv run pyright`, and `uv run pytest`.
+  - Ruff targets Python 3.12, line length 120, double quotes, and checks bugbear, pycodestyle, pyflakes, isort, naming, Ruff rules, simplify, and pyupgrade.
+  - Pyright runs in standard mode over `src` and `scripts`.
+  - The existing lint/type/test baseline may not be fully clean; treat failures as cleanup work, not permission to reduce quality.
+
+rules:
+  proposal:
+    - Tie the motivation to the WhatsApp banking/reporting assistant experience, not generic app behavior.
+    - Include affected runtime paths such as webhook, agent runner, tool registry, Investec client, Cosmos repositories, reporting, Twilio, email, or infrastructure when relevant.
+    - Call out whether the change affects money movement, personal financial data, scheduled reporting, external integrations, or user-facing WhatsApp copy.
+    - List new or modified capabilities using kebab-case names and only mark a capability modified when observable requirements change.
+  specs:
+    - Write requirements as testable banking/reporting behavior using SHALL or MUST.
+    - Every requirement must include at least one `#### Scenario:` with clear WHEN/THEN steps.
+    - Include safety scenarios for transfers, beneficiary payments, report generation, financial advice boundaries, and sensitive identifiers when applicable.
+    - Prefer concrete examples with WhatsApp input, resolved Johannesburg dates, ZAR amounts, account selection, or provider failure behavior where useful.
+  design:
+    - Explain how the change preserves boundaries between application, agent, domain, services, and tools.
+    - Identify dependency injection points, provider contracts, Pydantic schemas, repository changes, and factory registration paths.
+    - Discuss operational effects for Azure Container Apps, Cosmos DB, Twilio webhooks, Investec API calls, email delivery, or Bicep changes when touched.
+    - Include risks and mitigations for money movement, data privacy, provider failures, scheduling, idempotency, and local/deployed behavior drift.
+  tasks:
+    - "Group work by dependency order: contracts/models, provider or repository implementation, tool/schema wiring, application/runtime integration, tests, and documentation."
+    - Include verification tasks for unit tests, integration tests or sandbox checks when credentials are required, and local agent chat behavior when agent tools change.
+    - Include documentation or use-case updates when user-visible behavior, safety rules, endpoints, or deployment steps change.
+    - Keep each checkbox small enough to complete and verify in one focused coding session.
