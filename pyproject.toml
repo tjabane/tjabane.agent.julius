@@ -18,6 +18,13 @@ dependencies = [
     "pydantic>=2.10.0",
     "python-dotenv>=1.0.0",
     "tzdata>=2026.2",
+    "opentelemetry-api>=1.42.1",
+    "opentelemetry-sdk>=1.42.1",
+    "opentelemetry-exporter-otlp>=1.42.1",
+    "opentelemetry-instrumentation-fastapi>=0.63b1",
+    "opentelemetry-instrumentation-asgi>=0.63b1",
+    "opentelemetry-instrumentation-httpx>=0.63b1",
+    "opentelemetry-instrumentation-logging>=0.63b1",
 ]
 
 [dependency-groups]
@@ -82,7 +89,14 @@ reportMissingTypeStubs = false
 
 [tool.hatch.build.targets.wheel]
 sources = ["src"]
-packages = ["src/krabs_application", "src/krabs_agent", "src/krabs_domain", "src/krabs_services"]
+packages = [
+    "src/krabs_application",
+    "src/krabs_agent",
+    "src/krabs_domain",
+    "src/krabs_observability",
+    "src/krabs_services",
+    "src/krabs_tools",
+]
 
 [build-system]
 requires = ["hatchling"]

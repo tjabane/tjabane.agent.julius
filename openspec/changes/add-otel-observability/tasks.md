@@ -1,8 +1,8 @@
 ## 1. Dependencies and Configuration
 
-- [ ] 1.1 Add OpenTelemetry Python dependencies for API, SDK, OTLP export, FastAPI/ASGI instrumentation, HTTP client instrumentation, and logging correlation.
-- [ ] 1.2 Add environment configuration examples for enabling, disabling, sampling, service name, resource attributes, and OTLP endpoint settings.
-- [ ] 1.3 Ensure the package/build configuration includes any new observability package or module paths.
+- [x] 1.1 Add OpenTelemetry Python dependencies for API, SDK, OTLP export, FastAPI/ASGI instrumentation, HTTP client instrumentation, and logging correlation.
+- [x] 1.2 Add environment configuration examples for enabling, disabling, sampling, service name, resource attributes, and OTLP endpoint settings.
+- [x] 1.3 Ensure the package/build configuration includes any new observability package or module paths.
 
 ## 2. Observability Foundation
 
