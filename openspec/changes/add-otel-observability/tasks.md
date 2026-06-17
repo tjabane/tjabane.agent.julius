@@ -6,10 +6,10 @@
 
 ## 2. Observability Foundation
 
-- [ ] 2.1 Create a neutral observability module for OTel initialization, tracer/meter access, safe attribute helpers, and no-op behavior when disabled.
-- [ ] 2.2 Define constants or helpers for approved span names, metric names, safe attribute names, and forbidden sensitive telemetry fields.
-- [ ] 2.3 Implement safe turn/session identity helpers that avoid raw WhatsApp phone numbers and can be reused by the webhook and agent paths.
-- [ ] 2.4 Add unit tests for disabled/no-op telemetry initialization and safe identifier generation.
+- [x] 2.1 Create a neutral observability module for OTel initialization, tracer/meter access, safe attribute helpers, and no-op behavior when disabled.
+- [x] 2.2 Define constants or helpers for approved span names, metric names, safe attribute names, and forbidden sensitive telemetry fields.
+- [x] 2.3 Implement safe turn/session identity helpers that avoid raw WhatsApp phone numbers and can be reused by the webhook and agent paths.
+- [x] 2.4 Add unit tests for disabled/no-op telemetry initialization and safe identifier generation.
 
 ## 3. Application and Dependency Instrumentation
 
