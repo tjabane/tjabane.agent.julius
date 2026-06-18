@@ -22,11 +22,11 @@
 
 ## 4. Agent and Tool Instrumentation
 
-- [ ] 4.1 Add an `agent.run` span around each agent turn with safe model, status, duration, turn, and session attributes.
-- [ ] 4.2 Add model-call spans or safe attributes around `OpenAI.responses.create` calls when the OpenAI SDK/HTTP spans do not provide sufficient semantic clarity.
-- [ ] 4.3 Add `tool.call` spans around registered tool execution with tool name, status, duration, result shape/count where safe, and safe error type.
-- [ ] 4.4 Ensure tool telemetry excludes raw tool arguments, raw tool outputs, banking payloads, account numbers, balances, beneficiaries, and transaction descriptions.
-- [ ] 4.5 Ensure the local `scripts/agent_chat.py` path uses the same safe observability setup or a documented local no-op/console mode.
+- [x] 4.1 Add an `agent.run` span around each agent turn with safe model, status, duration, turn, and session attributes.
+- [x] 4.2 Add model-call spans or safe attributes around `OpenAI.responses.create` calls when the OpenAI SDK/HTTP spans do not provide sufficient semantic clarity.
+- [x] 4.3 Add `tool.call` spans around registered tool execution with tool name, status, duration, result shape/count where safe, and safe error type.
+- [x] 4.4 Ensure tool telemetry excludes raw tool arguments, raw tool outputs, banking payloads, account numbers, balances, beneficiaries, and transaction descriptions.
+- [x] 4.5 Ensure the local `scripts/agent_chat.py` path uses the same safe observability setup or a documented local no-op/console mode.
 
 ## 5. Metrics and Logs
 

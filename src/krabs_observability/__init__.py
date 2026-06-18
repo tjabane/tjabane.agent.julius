@@ -1,5 +1,6 @@
 """OpenTelemetry setup and instrumentation helpers for Mr Krabs."""
 
+from krabs_observability.agent import AgentRun, ResponseClient, ToolRunner
 from krabs_observability.context import (
     TurnContext,
     create_turn_context,
@@ -19,11 +20,14 @@ from krabs_observability.telemetry import (
 )
 
 __all__ = [
+    "AgentRun",
     "AttributeName",
     "MetricName",
     "ObservabilitySettings",
+    "ResponseClient",
     "SpanName",
     "Telemetry",
+    "ToolRunner",
     "TurnContext",
     "create_turn_context",
     "create_turn_context_from_env",
