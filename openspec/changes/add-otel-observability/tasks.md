@@ -13,12 +13,12 @@
 
 ## 3. Application and Dependency Instrumentation
 
-- [ ] 3.1 Wire OTel initialization into FastAPI application startup without changing route behavior.
-- [ ] 3.2 Enable FastAPI/ASGI request tracing and verify invalid webhooks produce request telemetry without agent spans.
-- [ ] 3.3 Add webhook turn correlation so valid inbound WhatsApp turns carry safe `turn.id` and `session.id` metadata.
-- [ ] 3.4 Add semantic spans for Twilio webhook parsing and outbound Twilio message sending.
-- [ ] 3.5 Add dependency spans or safe attributes for Investec operations and provider failures where auto-instrumentation is insufficient.
-- [ ] 3.6 Add optional session persistence spans for load/save operations if they provide useful visibility without leaking stored message content.
+- [x] 3.1 Wire OTel initialization into FastAPI application startup without changing route behavior.
+- [x] 3.2 Enable FastAPI/ASGI request tracing and verify invalid webhooks produce request telemetry without agent spans.
+- [x] 3.3 Add webhook turn correlation so valid inbound WhatsApp turns carry safe `turn.id` and `session.id` metadata.
+- [x] 3.4 Add semantic spans for Twilio webhook parsing and outbound Twilio message sending.
+- [x] 3.5 Add dependency spans or safe attributes for Investec operations and provider failures where auto-instrumentation is insufficient.
+- [x] 3.6 Add optional session persistence spans for load/save operations if they provide useful visibility without leaking stored message content.
 
 ## 4. Agent and Tool Instrumentation
 

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator, Mapping, Set
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 from opentelemetry import metrics, trace
@@ -10,7 +12,10 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.sdk.trace.sampling import ALWAYS_OFF, ALWAYS_ON, ParentBased, TraceIdRatioBased
-from opentelemetry.trace import Tracer
+from opentelemetry.trace import Span, Tracer
+
+from krabs_observability.context import current_turn_context
+from krabs_observability.semantic import AttributeName, safe_attributes
 
 try:
     from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
@@ -77,6 +82,41 @@ def get_tracer() -> Tracer:
 
 def get_meter() -> metrics.Meter:
     return metrics.get_meter(_INSTRUMENTATION_NAME)
+
+
+@contextmanager
+def trace_operation(
+    span_name: str,
+    *,
+    attributes: Mapping[str, object] | None = None,
+    allowed_attribute_names: Set[str] | None = None,
+) -> Iterator[Span]:
+    allowed_names = set(allowed_attribute_names or set())
+    allowed_names.update(
+        {
+            AttributeName.ERROR_TYPE,
+            AttributeName.SESSION_ID,
+            AttributeName.STATUS,
+            AttributeName.TURN_ID,
+        }
+    )
+    span_attributes: dict[str, object] = dict(attributes or {})
+    if turn_context := current_turn_context():
+        span_attributes.setdefault(AttributeName.TURN_ID, turn_context.turn_id)
+        span_attributes.setdefault(AttributeName.SESSION_ID, turn_context.session_id)
+
+    with get_tracer().start_as_current_span(
+        span_name,
+        attributes=safe_attributes(span_attributes, allowed_names=allowed_names),
+    ) as span:
+        try:
+            yield span
+            span.set_attribute(AttributeName.STATUS, "success")
+        except Exception as exc:
+            span.set_attribute(AttributeName.STATUS, "error")
+            span.set_attribute(AttributeName.ERROR_TYPE, type(exc).__name__)
+            span.record_exception(exc)
+            raise
 
 
 def _configure_providers_once(settings: ObservabilitySettings) -> None:

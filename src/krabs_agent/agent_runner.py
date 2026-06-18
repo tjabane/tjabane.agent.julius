@@ -9,6 +9,7 @@ from krabs_agent.runtime import Agent
 from krabs_domain.models.agent import Message
 from krabs_domain.repositories.agent import SessionRepository
 from krabs_domain.repositories.reporting import ReportRepository
+from krabs_observability.adapters import BankingClient as ObservedBankingClient
 from krabs_services.communication import get_report_sender
 from krabs_services.finance.investec_client import InvestecClient
 from krabs_tools.registry import ToolRegistry
@@ -30,7 +31,7 @@ def _get_sessions() -> SessionRepository:
 def _get_tool_registry() -> ToolRegistry:
     global _tool_registry
     if _tool_registry is None:
-        banking_client = InvestecClient()
+        banking_client = ObservedBankingClient(InvestecClient())
         report_sender = get_report_sender()
         registry = ToolRegistry()
         registry.register_many(create_banking_tools(banking_client))
@@ -64,4 +65,3 @@ def run(
     session.messages.append(Message(role="assistant", content=reply))
     sessions.save(session)
     return reply
-

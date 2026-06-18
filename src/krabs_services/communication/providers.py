@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from krabs_domain.contracts import EmailService
+from krabs_observability.adapters import MessageSender as ObservedMessageSender
 from krabs_services.communication.email_service import AzureEmailService
 from krabs_services.communication.protocols import MessageSender
 from krabs_services.communication.twilio_client import TwilioClient
@@ -12,7 +13,7 @@ _report_sender: EmailService | None = None
 def get_message_sender() -> MessageSender:
     global _message_sender
     if _message_sender is None:
-        _message_sender = TwilioClient()
+        _message_sender = ObservedMessageSender(TwilioClient())
     return _message_sender
 
 
