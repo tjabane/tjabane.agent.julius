@@ -1,19 +1,18 @@
+from datetime import UTC, datetime
+from unittest.mock import MagicMock
+
 import pytest
-from datetime import datetime, timezone
-from unittest.mock import MagicMock, call
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
 
-from krabs_domain.repositories.reporting import ScheduleRepository, ReportRepository
-from krabs_domain.models.reporting import Schedule, Frequency, Report
+from krabs_domain.models.reporting import Frequency, Report, Schedule
+from krabs_domain.repositories.reporting import ReportRepository, ScheduleRepository
 
 
 @pytest.fixture
 def container(mocker):
     mock_client = mocker.patch("krabs_domain.repositories.base.CosmosClient")
     c = MagicMock()
-    mock_client.from_connection_string.return_value \
-        .get_database_client.return_value \
-        .get_container_client.return_value = c
+    mock_client.from_connection_string.return_value.get_database_client.return_value.get_container_client.return_value = c
     return c
 
 
@@ -32,10 +31,10 @@ def _schedule_dict(**kwargs):
         "id": "sched-1",
         "query": "monthly summary",
         "frequency": "daily",
-        "next_run": datetime.now(timezone.utc).isoformat(),
+        "next_run": datetime.now(UTC).isoformat(),
         "enabled": True,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
+        "updated_at": datetime.now(UTC).isoformat(),
     }
     return {**base, **kwargs}
 
@@ -45,7 +44,7 @@ def _report_dict(**kwargs):
         "id": "report-1",
         "query": "spending summary",
         "content": "You spent R1000",
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
     }
     return {**base, **kwargs}
 
@@ -68,16 +67,16 @@ class TestScheduleRepositoryGet:
 
 class TestScheduleRepositorySave:
     def test_calls_upsert(self, schedule_repo, container):
-        schedule = Schedule(query="q", frequency=Frequency.DAILY, next_run=datetime.now(timezone.utc))
+        schedule = Schedule(query="q", frequency=Frequency.DAILY, next_run=datetime.now(UTC))
         schedule_repo.save(schedule)
         container.upsert_item.assert_called_once()
 
     def test_returns_schedule(self, schedule_repo, container):
-        schedule = Schedule(query="q", frequency=Frequency.DAILY, next_run=datetime.now(timezone.utc))
+        schedule = Schedule(query="q", frequency=Frequency.DAILY, next_run=datetime.now(UTC))
         assert schedule_repo.save(schedule) is schedule
 
     def test_updates_updated_at(self, schedule_repo, container):
-        schedule = Schedule(query="q", frequency=Frequency.DAILY, next_run=datetime.now(timezone.utc))
+        schedule = Schedule(query="q", frequency=Frequency.DAILY, next_run=datetime.now(UTC))
         original = schedule.updated_at
         schedule_repo.save(schedule)
         assert schedule.updated_at >= original

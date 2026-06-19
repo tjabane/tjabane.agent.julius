@@ -17,10 +17,15 @@ class SpanName:
 
 
 class MetricName:
+    REQUEST_COUNT = "krabs.request.count"
     REQUEST_DURATION = "krabs.request.duration"
+    AGENT_RUN_COUNT = "krabs.agent.run.count"
     AGENT_RUN_DURATION = "krabs.agent.run.duration"
+    MODEL_CALL_COUNT = "krabs.model.call.count"
     MODEL_CALL_DURATION = "krabs.model.call.duration"
+    TOOL_CALL_COUNT = "krabs.tool.call.count"
     TOOL_CALL_DURATION = "krabs.tool.call.duration"
+    DEPENDENCY_OPERATION_COUNT = "krabs.dependency.operation.count"
     DEPENDENCY_OPERATION_DURATION = "krabs.dependency.operation.duration"
 
 

@@ -29,9 +29,18 @@ def test_fastapi_instrumentation_runs_when_observability_is_enabled(monkeypatch)
         "krabs_observability.instrumentation.HTTPXClientInstrumentor.instrument",
         lambda self: calls.append(("httpx", None)),
     )
+    monkeypatch.setattr(
+        "krabs_observability.instrumentation.LoggingInstrumentor.instrument",
+        lambda self, **kwargs: calls.append(("logging", kwargs)),
+    )
     monkeypatch.setattr("krabs_observability.instrumentation._httpx_instrumented", False)
+    monkeypatch.setattr("krabs_observability.instrumentation._logging_instrumented", False)
 
     app = FastAPI()
     fastapi_app(app, Telemetry(enabled=True, tracer=get_tracer(), meter=get_meter()))
 
-    assert calls == [("fastapi", app), ("httpx", None)]
+    assert calls == [
+        ("fastapi", app),
+        ("httpx", None),
+        ("logging", {"set_logging_format": False}),
+    ]

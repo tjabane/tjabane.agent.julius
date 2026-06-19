@@ -7,12 +7,15 @@ from krabs_services.communication.email_service import AzureEmailService
 
 @pytest.fixture(autouse=True)
 def email_env(monkeypatch):
-    monkeypatch.setenv("AZURE_COMMUNICATION_CONNECTION_STRING", "endpoint=https://test.communication.azure.com/;accesskey=dGVzdA==")
+    monkeypatch.setenv(
+        "AZURE_COMMUNICATION_CONNECTION_STRING", "endpoint=https://test.communication.azure.com/;accesskey=dGVzdA=="
+    )
     monkeypatch.setenv("EMAIL_SENDER_ADDRESS", "DoNotReply@test.azurecomm.net")
     monkeypatch.setenv("EMAIL_RECIPIENT_ADDRESS", "user@example.com")
 
 
 # ── Initialisation ────────────────────────────────────────────────────────────
+
 
 class TestInit:
     @patch("krabs_services.communication.email_service.EmailClient")
@@ -34,6 +37,7 @@ class TestInit:
 
 
 # ── send_report ───────────────────────────────────────────────────────────────
+
 
 class TestSendReport:
     @patch("krabs_services.communication.email_service.EmailClient")

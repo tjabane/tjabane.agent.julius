@@ -46,10 +46,7 @@ class GetBulkBalancesTool:
 
     async def run(self, input_data: GetBulkBalancesInput) -> list[dict[str, Any]]:
         return await asyncio.gather(
-            *[
-                asyncio.to_thread(self._banking_client.get_balance, account_id)
-                for account_id in input_data.account_ids
-            ]
+            *[asyncio.to_thread(self._banking_client.get_balance, account_id) for account_id in input_data.account_ids]
         )
 
 

@@ -1,14 +1,15 @@
-from datetime import datetime, timezone
-from enum import Enum
-from pydantic import BaseModel, Field
 import uuid
+from datetime import UTC, datetime
+from enum import StrEnum
+
+from pydantic import BaseModel, Field
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
-class Frequency(str, Enum):
+class Frequency(StrEnum):
     DAILY = "daily"
     WEEKLY = "weekly"
 

@@ -1,7 +1,9 @@
-from azure.cosmos import CosmosClient, ContainerProxy
+import os
+from contextlib import suppress
+
+from azure.cosmos import ContainerProxy, CosmosClient
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
 from pydantic import BaseModel
-import os
 
 
 class BaseRepository:
@@ -21,14 +23,14 @@ class BaseRepository:
             return None
 
     def _delete(self, item_id: str, partition_key: str) -> None:
-        try:
+        with suppress(CosmosResourceNotFoundError):
             self._container.delete_item(item_id, partition_key=partition_key)
-        except CosmosResourceNotFoundError:
-            pass
 
     def _query(self, query: str, parameters: list[dict] | None = None) -> list[dict]:
-        return list(self._container.query_items(
-            query=query,
-            parameters=parameters or [],
-            enable_cross_partition_query=True,
-        ))
+        return list(
+            self._container.query_items(
+                query=query,
+                parameters=parameters or [],
+                enable_cross_partition_query=True,
+            )
+        )

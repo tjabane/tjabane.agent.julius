@@ -30,20 +30,20 @@
 
 ## 5. Metrics and Logs
 
-- [ ] 5.1 Add request, agent run, model call, tool call, and dependency operation RED metrics using bounded dimensions only.
-- [ ] 5.2 Add log correlation with active trace/span identifiers for notable application errors without turning logs into the primary trace structure.
-- [ ] 5.3 Add unit tests proving metric/log attributes do not include raw phone numbers, message bodies, or banking payload fields.
+- [x] 5.1 Add request, agent run, model call, tool call, and dependency operation RED metrics using bounded dimensions only.
+- [x] 5.2 Add log correlation with active trace/span identifiers for notable application errors without turning logs into the primary trace structure.
+- [x] 5.3 Add unit tests proving metric/log attributes do not include raw phone numbers, message bodies, or banking payload fields.
 
 ## 6. Infrastructure and Documentation
 
-- [ ] 6.1 Document local telemetry modes: disabled, console/debug, and OTLP endpoint.
-- [ ] 6.2 Update deployment documentation for Azure Container Apps OTLP environment variables and resource attributes.
-- [ ] 6.3 Add or update infrastructure configuration for OTLP endpoint/resource settings only if needed by the selected deployment path.
-- [ ] 6.4 Document how Langfuse can later correlate with OTel using shared `turn.id`, `session.id`, and OTel trace metadata without implementing Langfuse now.
+- [x] 6.1 Document local telemetry modes: disabled, console/debug, and OTLP endpoint.
+- [x] 6.2 Update deployment documentation for Azure Container Apps OTLP environment variables and resource attributes.
+- [x] 6.3 Add or update infrastructure configuration for OTLP endpoint/resource settings only if needed by the selected deployment path.
+- [x] 6.4 Document how Langfuse can later correlate with OTel using shared `turn.id`, `session.id`, and OTel trace metadata without implementing Langfuse now.
 
 ## 7. Verification
 
-- [ ] 7.1 Add focused unit tests for webhook trace correlation, invalid webhook behavior, agent span behavior, tool span behavior, and passive disabled mode.
-- [ ] 7.2 Add a privacy regression test that fails if forbidden sensitive fields appear in emitted telemetry records.
-- [ ] 7.3 Run `uv run ruff format --check .`, `uv run ruff check .`, `uv run pyright`, and `uv run pytest`.
-- [ ] 7.4 Manually verify a local webhook or `scripts/agent_chat.py` run with console/OTLP telemetry and confirm traces show the expected span hierarchy.
+- [x] 7.1 Add focused unit tests for webhook trace correlation, invalid webhook behavior, agent span behavior, tool span behavior, and passive disabled mode.
+- [x] 7.2 Add a privacy regression test that fails if forbidden sensitive fields appear in emitted telemetry records.
+- [x] 7.3 Run `uv run ruff format --check .`, `uv run ruff check .`, `uv run pyright`, and `uv run pytest`.
+- [x] 7.4 Manually verify a local webhook or `scripts/agent_chat.py` run with console/OTLP telemetry and confirm traces show the expected span hierarchy.

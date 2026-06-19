@@ -111,6 +111,10 @@ Useful endpoints:
 - `POST /webhook`
 - `POST /api/webhook` legacy alias
 
+### Observability
+
+OpenTelemetry is disabled by default locally. Console and OTLP modes, Azure Container Apps configuration, telemetry privacy rules, and future Langfuse correlation notes are documented in [docs/observability.md](docs/observability.md).
+
 ---
 
 ## Deploy

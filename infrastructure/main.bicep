@@ -19,6 +19,24 @@ param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-hellowo
 @description('Configure runtime Key Vault secret references and secret-backed environment variables.')
 param configureRuntimeSecrets bool = false
 
+@description('OpenTelemetry mode: disabled, console, or otlp.')
+param otelMode string = 'disabled'
+
+@description('OpenTelemetry service name.')
+param otelServiceName string = 'mr-krabs'
+
+@description('Optional OTLP endpoint, for example http://otel-collector:4317.')
+param otelExporterOtlpEndpoint string = ''
+
+@description('Additional comma-separated OpenTelemetry resource attributes.')
+param otelResourceAttributes string = ''
+
+@description('OpenTelemetry trace sampler.')
+param otelTracesSampler string = 'parentbased_traceidratio'
+
+@description('OpenTelemetry trace sampler argument.')
+param otelTracesSamplerArg string = '1.0'
+
 var suffix = take(uniqueString(resourceGroup().id), 8)
 var safeAppName = replace(appName, '-', '')
 
@@ -81,6 +99,12 @@ module containerApp 'modules/container-app.bicep' = {
     emailSenderAddress: communication.outputs.senderAddress
     containerImage: containerImage
     configureRuntimeSecrets: configureRuntimeSecrets
+    otelMode: otelMode
+    otelServiceName: otelServiceName
+    otelExporterOtlpEndpoint: otelExporterOtlpEndpoint
+    otelResourceAttributes: otelResourceAttributes
+    otelTracesSampler: otelTracesSampler
+    otelTracesSamplerArg: otelTracesSamplerArg
   }
 }
 

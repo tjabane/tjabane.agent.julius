@@ -1,10 +1,12 @@
-from datetime import datetime, timezone
-from krabs_domain.models.reporting import Schedule, Report
+from datetime import UTC, datetime
+
+from krabs_domain.models.reporting import Report, Schedule
+
 from .base import BaseRepository
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class ScheduleRepository(BaseRepository):
@@ -34,6 +36,7 @@ class ScheduleRepository(BaseRepository):
             [{"name": "@now", "value": now}],
         )
         return [Schedule(**r) for r in rows]
+
 
 class ReportRepository(BaseRepository):
     def __init__(self):

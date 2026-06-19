@@ -13,7 +13,19 @@ param(
 
     [bool]$InvestecSandbox = $true,
 
-    [string]$ImageTag = "latest"
+    [string]$ImageTag = "latest",
+
+    [string]$OtelMode = "disabled",
+
+    [string]$OtelServiceName = "mr-krabs",
+
+    [string]$OtelExporterOtlpEndpoint = "",
+
+    [string]$OtelResourceAttributes = "",
+
+    [string]$OtelTracesSampler = "parentbased_traceidratio",
+
+    [string]$OtelTracesSamplerArg = "1.0"
 )
 
 Set-StrictMode -Version Latest
@@ -40,7 +52,7 @@ Write-Host "`n[4/8] Deploying Bicep infrastructure..." -ForegroundColor Cyan
 $deployOutput = az deployment group create `
     --resource-group $ResourceGroup `
     --template-file "$PSScriptRoot\main.bicep" `
-    --parameters appName=$AppName location=$Location appEnvironment=$AppEnvironment investecSandbox=$($InvestecSandbox.ToString().ToLower()) deployingUserObjectId=$deployingUserObjectId `
+    --parameters appName=$AppName location=$Location appEnvironment=$AppEnvironment investecSandbox=$($InvestecSandbox.ToString().ToLower()) deployingUserObjectId=$deployingUserObjectId otelMode=$OtelMode otelServiceName=$OtelServiceName otelExporterOtlpEndpoint=$OtelExporterOtlpEndpoint otelResourceAttributes=$OtelResourceAttributes otelTracesSampler=$OtelTracesSampler otelTracesSamplerArg=$OtelTracesSamplerArg `
     --query properties.outputs `
     --output json | ConvertFrom-Json
 
@@ -100,7 +112,7 @@ Write-Host "`n[7/8] Applying runtime secrets and container image..." -Foreground
 $deployOutput = az deployment group create `
     --resource-group $ResourceGroup `
     --template-file "$PSScriptRoot\main.bicep" `
-    --parameters appName=$AppName location=$Location appEnvironment=$AppEnvironment investecSandbox=$($InvestecSandbox.ToString().ToLower()) deployingUserObjectId=$deployingUserObjectId containerImage=$image configureRuntimeSecrets=true `
+    --parameters appName=$AppName location=$Location appEnvironment=$AppEnvironment investecSandbox=$($InvestecSandbox.ToString().ToLower()) deployingUserObjectId=$deployingUserObjectId containerImage=$image configureRuntimeSecrets=true otelMode=$OtelMode otelServiceName=$OtelServiceName otelExporterOtlpEndpoint=$OtelExporterOtlpEndpoint otelResourceAttributes=$OtelResourceAttributes otelTracesSampler=$OtelTracesSampler otelTracesSamplerArg=$OtelTracesSamplerArg `
     --query properties.outputs `
     --output json | ConvertFrom-Json
 

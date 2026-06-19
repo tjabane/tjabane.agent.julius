@@ -9,6 +9,12 @@ param containerImage string
 param configureRuntimeSecrets bool = false
 param minReplicas int = 1
 param maxReplicas int = 1
+param otelMode string = 'disabled'
+param otelServiceName string = 'mr-krabs'
+param otelExporterOtlpEndpoint string = ''
+param otelResourceAttributes string = ''
+param otelTracesSampler string = 'parentbased_traceidratio'
+param otelTracesSamplerArg string = '1.0'
 
 var environmentName = 'cae-${appName}-${uniqueString(resourceGroup().id)}'
 var containerAppName = 'ca-${appName}-${uniqueString(resourceGroup().id)}'
@@ -164,6 +170,38 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'SCHEDULER_INTERVAL_SECONDS'
               value: '300'
+            }
+            {
+              name: 'OTEL_MODE'
+              value: otelMode
+            }
+            {
+              name: 'OTEL_SERVICE_NAME'
+              value: otelServiceName
+            }
+            {
+              name: 'OTEL_ENVIRONMENT'
+              value: appEnvironment
+            }
+            {
+              name: 'OTEL_RESOURCE_ATTRIBUTES'
+              value: empty(otelResourceAttributes) ? 'deployment.environment=${appEnvironment},service.namespace=krabs' : otelResourceAttributes
+            }
+            {
+              name: 'OTEL_TRACES_SAMPLER'
+              value: otelTracesSampler
+            }
+            {
+              name: 'OTEL_TRACES_SAMPLER_ARG'
+              value: otelTracesSamplerArg
+            }
+            {
+              name: 'OTEL_EXPORTER_OTLP_PROTOCOL'
+              value: 'grpc'
+            }
+            {
+              name: 'OTEL_EXPORTER_OTLP_ENDPOINT'
+              value: otelExporterOtlpEndpoint
             }
           ], configureRuntimeSecrets ? [
             {
