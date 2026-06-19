@@ -20,7 +20,7 @@ param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-hellowo
 param configureRuntimeSecrets bool = false
 
 @description('OpenTelemetry mode: disabled, console, or otlp.')
-param otelMode string = 'disabled'
+param otelMode string = 'otlp'
 
 @description('OpenTelemetry service name.')
 param otelServiceName string = 'mr-krabs'
@@ -87,6 +87,14 @@ module keyvault 'modules/keyvault.bicep' = {
   }
 }
 
+module monitoring 'modules/monitoring.bicep' = {
+  name: 'monitoring'
+  params: {
+    appName: appName
+    location: location
+  }
+}
+
 module containerApp 'modules/container-app.bicep' = {
   name: 'containerApp'
   params: {
@@ -99,6 +107,7 @@ module containerApp 'modules/container-app.bicep' = {
     emailSenderAddress: communication.outputs.senderAddress
     containerImage: containerImage
     configureRuntimeSecrets: configureRuntimeSecrets
+    appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
     otelMode: otelMode
     otelServiceName: otelServiceName
     otelExporterOtlpEndpoint: otelExporterOtlpEndpoint
@@ -117,3 +126,5 @@ output containerAppName string = containerApp.outputs.name
 output containerAppsEnvironmentName string = containerApp.outputs.environmentName
 output acrName string = containerApp.outputs.acrName
 output acrLoginServer string = containerApp.outputs.acrLoginServer
+output appInsightsName string = monitoring.outputs.appInsightsName
+output logAnalyticsWorkspaceName string = monitoring.outputs.workspaceName

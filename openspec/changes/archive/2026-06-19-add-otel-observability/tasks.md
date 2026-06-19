@@ -40,6 +40,7 @@
 - [x] 6.2 Update deployment documentation for Azure Container Apps OTLP environment variables and resource attributes.
 - [x] 6.3 Add or update infrastructure configuration for OTLP endpoint/resource settings only if needed by the selected deployment path.
 - [x] 6.4 Document how Langfuse can later correlate with OTel using shared `turn.id`, `session.id`, and OTel trace metadata without implementing Langfuse now.
+- [x] 6.5 Provision Log Analytics and Application Insights in Bicep and configure the Azure Container Apps managed OpenTelemetry agent to route traces and logs to Application Insights.
 
 ## 7. Verification
 

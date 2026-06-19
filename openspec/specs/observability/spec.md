@@ -1,4 +1,8 @@
-## ADDED Requirements
+## Purpose
+
+Define the privacy-safe OpenTelemetry observability contract for webhook, agent, tool, dependency, metrics, and Azure telemetry routing behavior.
+
+## Requirements
 
 ### Requirement: Inbound WhatsApp turns are traceable
 The system SHALL create or propagate an OpenTelemetry trace for each inbound WhatsApp webhook turn and SHALL correlate webhook handling, agent execution, model calls, tool calls, persistence operations, external dependency calls, and Twilio reply delivery under that trace when those operations occur.
@@ -72,6 +76,10 @@ The system SHALL configure service name, environment, resource attributes, sampl
 #### Scenario: Deployed container uses OTLP configuration
 - **WHEN** the application starts in Azure Container Apps with OTLP environment variables configured
 - **THEN** telemetry is exported through the configured OTLP endpoint using the configured service name and resource attributes.
+
+#### Scenario: Azure deployment routes traces to Application Insights
+- **WHEN** the Bicep deployment creates the Azure Container Apps environment
+- **THEN** it provisions Log Analytics and workspace-based Application Insights and configures the managed OpenTelemetry agent to route application traces and logs to Application Insights.
 
 #### Scenario: Vendor backend changes
 - **WHEN** telemetry is rerouted from one backend to another OTLP-compatible backend

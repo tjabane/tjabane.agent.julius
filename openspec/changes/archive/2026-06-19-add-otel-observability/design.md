@@ -37,6 +37,8 @@ The application will use OTLP exporters and environment-driven configuration. In
 
 Alternative considered: direct vendor SDK/exporter setup in application code. This was rejected because it makes vendor migration, sampling, filtering, and redaction harder to centralize.
 
+The selected Azure deployment path provisions workspace-based Application Insights and configures the Azure Container Apps managed OpenTelemetry agent as the collector boundary. The application exports OTLP to the managed agent endpoint injected by Container Apps; the managed agent routes traces and logs to Application Insights and can optionally fan out telemetry to a custom OTLP destination. Application Insights does not currently accept metrics from the managed agent, so application metrics are available only when a custom OTLP metrics destination is configured.
+
 ### Combine auto-instrumentation with boundary instrumentation
 
 Auto-instrumentation will be used for framework and library-level mechanics such as HTTP server/client spans. Manual spans will be added only at meaningful domain boundaries:
@@ -116,7 +118,6 @@ Alternative considered: add Langfuse OpenAI wrapping in the same change. This wa
 
 ## Open Questions
 
-- Which backend should receive OTel data first: Azure Monitor/Application Insights, a local Collector pipeline, or another OTLP-compatible target?
 - Should production sampling start at 100% while the app is single-user, or should it immediately use a lower default with error-biased retention?
 - Should Cosmos repository spans be included in the first implementation, or deferred until repository latency/errors become a known debugging need?
 - Which exact OpenAI Responses API metadata is safe and useful to attach before Langfuse is introduced?

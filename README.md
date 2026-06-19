@@ -53,6 +53,7 @@ The agent uses OpenAI's Responses API with a `ToolRegistry`. Banking tools live 
 | Database | Azure Cosmos DB |
 | Email | Azure Communication Services |
 | Secrets | Azure Key Vault |
+| Observability | Azure Monitor Application Insights + OpenTelemetry |
 | IaC | Azure Bicep |
 
 ---

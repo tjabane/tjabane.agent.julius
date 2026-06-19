@@ -9,7 +9,9 @@ param containerImage string
 param configureRuntimeSecrets bool = false
 param minReplicas int = 1
 param maxReplicas int = 1
-param otelMode string = 'disabled'
+@secure()
+param appInsightsConnectionString string
+param otelMode string = 'otlp'
 param otelServiceName string = 'mr-krabs'
 param otelExporterOtlpEndpoint string = ''
 param otelResourceAttributes string = ''
@@ -21,6 +23,23 @@ var containerAppName = 'ca-${appName}-${uniqueString(resourceGroup().id)}'
 var acrName = 'acr${replace(take(appName, 12), '-', '')}${take(uniqueString(resourceGroup().id), 8)}'
 var keyVaultBaseUrl = 'https://${keyVaultName}${az.environment().suffixes.keyvaultDns}/secrets'
 var registryPasswordSecretName = 'acr-password'
+var customOtlpDestinationName = 'customOtlp'
+var customOtlpDestinations = empty(otelExporterOtlpEndpoint) ? [] : [customOtlpDestinationName]
+var appInsightsDestinations = ['appInsights']
+var traceAndLogDestinations = concat(appInsightsDestinations, customOtlpDestinations)
+var customOtlpConfigurations = empty(otelExporterOtlpEndpoint) ? [] : [
+  {
+    name: customOtlpDestinationName
+    endpoint: otelExporterOtlpEndpoint
+    insecure: startsWith(toLower(otelExporterOtlpEndpoint), 'http://')
+  }
+]
+var resourceAttributeEnvironment = empty(otelResourceAttributes) ? [] : [
+  {
+    name: 'OTEL_RESOURCE_ATTRIBUTES'
+    value: otelResourceAttributes
+  }
+]
 
 resource registry 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' = {
   name: acrName
@@ -33,10 +52,28 @@ resource registry 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' = 
   }
 }
 
-resource environment 'Microsoft.App/managedEnvironments@2024-03-01' = {
+resource environment 'Microsoft.App/managedEnvironments@2024-10-02-preview' = {
   name: environmentName
   location: location
-  properties: {}
+  properties: {
+    appInsightsConfiguration: {
+      connectionString: appInsightsConnectionString
+    }
+    openTelemetryConfiguration: {
+      destinationsConfiguration: {
+        otlpConfigurations: customOtlpConfigurations
+      }
+      tracesConfiguration: {
+        destinations: traceAndLogDestinations
+      }
+      logsConfiguration: {
+        destinations: traceAndLogDestinations
+      }
+      metricsConfiguration: {
+        destinations: customOtlpDestinations
+      }
+    }
+  }
 }
 
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
@@ -184,10 +221,6 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               value: appEnvironment
             }
             {
-              name: 'OTEL_RESOURCE_ATTRIBUTES'
-              value: empty(otelResourceAttributes) ? 'deployment.environment=${appEnvironment},service.namespace=krabs' : otelResourceAttributes
-            }
-            {
               name: 'OTEL_TRACES_SAMPLER'
               value: otelTracesSampler
             }
@@ -195,15 +228,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               name: 'OTEL_TRACES_SAMPLER_ARG'
               value: otelTracesSamplerArg
             }
-            {
-              name: 'OTEL_EXPORTER_OTLP_PROTOCOL'
-              value: 'grpc'
-            }
-            {
-              name: 'OTEL_EXPORTER_OTLP_ENDPOINT'
-              value: otelExporterOtlpEndpoint
-            }
-          ], configureRuntimeSecrets ? [
+          ], resourceAttributeEnvironment, configureRuntimeSecrets ? [
             {
               name: 'OPENAI_API_KEY'
               secretRef: 'openai-api-key'

@@ -32,28 +32,41 @@ uv run uvicorn krabs_application.fastapi_app:app --app-dir src --reload --port 8
 
 ## Azure Container Apps
 
-The Bicep deployment exposes OTel configuration as parameters and passes them to the Container App:
+The Bicep deployment provisions a Log Analytics workspace and workspace-based Application Insights resource. The Azure Container Apps managed OpenTelemetry agent is configured at the Container Apps environment level and routes application traces and logs to Application Insights.
+
+Azure deployments default `OTEL_MODE` to `otlp`. The Container Apps managed agent injects `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, and `OTEL_RESOURCE_ATTRIBUTES` at runtime. The container app does not set `OTEL_EXPORTER_OTLP_ENDPOINT` itself, so the app exports to the managed agent and the managed agent handles backend routing.
+
+Application Insights currently accepts traces and logs from the managed agent, but not metrics. Custom application metrics are sent only when a custom OTLP destination is configured.
+
+The deployment exposes these OTel parameters:
 
 | Parameter | Environment variable | Default |
 |---|---|---|
-| `otelMode` | `OTEL_MODE` | `disabled` |
+| `otelMode` | `OTEL_MODE` | `otlp` in Azure deployment, `disabled` in local app defaults |
 | `otelServiceName` | `OTEL_SERVICE_NAME` | `mr-krabs` |
-| `otelExporterOtlpEndpoint` | `OTEL_EXPORTER_OTLP_ENDPOINT` | empty |
-| `otelResourceAttributes` | `OTEL_RESOURCE_ATTRIBUTES` | `deployment.environment=<appEnvironment>,service.namespace=krabs` |
+| `otelExporterOtlpEndpoint` | managed agent OTLP destination | empty |
+| `otelResourceAttributes` | `OTEL_RESOURCE_ATTRIBUTES` | empty; use managed agent injection |
 | `otelTracesSampler` | `OTEL_TRACES_SAMPLER` | `parentbased_traceidratio` |
 | `otelTracesSamplerArg` | `OTEL_TRACES_SAMPLER_ARG` | `1.0` |
 
-Deploy with OTLP enabled by passing parameters to the deployment script or underlying Bicep command, for example:
+Deploy with Application Insights enabled:
+
+```powershell
+.\infrastructure\deploy.ps1 `
+  -ResourceGroup "rg-krabs" `
+  -Location "southafricanorth"
+```
+
+To also route telemetry from the managed agent to another OTLP-compatible backend, pass a custom endpoint:
 
 ```powershell
 .\infrastructure\deploy.ps1 `
   -ResourceGroup "rg-krabs" `
   -Location "southafricanorth" `
-  -OtelMode "otlp" `
-  -OtelExporterOtlpEndpoint "http://otel-collector:4317"
+  -OtelExporterOtlpEndpoint "https://otel.example.com:4317"
 ```
 
-The application exports through OTLP only. Backend-specific routing, filtering, and redaction should live in the collector or hosting configuration rather than in business code.
+Backend-specific routing, filtering, and redaction should live in the Container Apps managed agent, an external collector, or hosting configuration rather than in business code.
 
 ## Privacy Contract
 

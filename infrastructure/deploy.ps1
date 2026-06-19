@@ -15,7 +15,7 @@ param(
 
     [string]$ImageTag = "latest",
 
-    [string]$OtelMode = "disabled",
+    [string]$OtelMode = "otlp",
 
     [string]$OtelServiceName = "mr-krabs",
 
@@ -62,10 +62,14 @@ $acsName          = $deployOutput.acsName.value
 $containerAppUrl  = $deployOutput.containerAppUrl.value
 $acrName          = $deployOutput.acrName.value
 $acrLoginServer   = $deployOutput.acrLoginServer.value
+$appInsightsName  = $deployOutput.appInsightsName.value
+$workspaceName    = $deployOutput.logAnalyticsWorkspaceName.value
 
 Write-Host "    Container App : $containerAppUrl" -ForegroundColor Green
 Write-Host "    ACR           : $acrLoginServer" -ForegroundColor Green
 Write-Host "    Key Vault     : $keyVaultName" -ForegroundColor Green
+Write-Host "    App Insights  : $appInsightsName" -ForegroundColor Green
+Write-Host "    Log Analytics : $workspaceName" -ForegroundColor Green
 
 Write-Host "`n[5/8] Populating Key Vault secrets..." -ForegroundColor Cyan
 $cosmosConn = (az cosmosdb keys list --name $cosmosAccount --resource-group $ResourceGroup --type connection-strings --query "connectionStrings[0].connectionString" -o tsv)
