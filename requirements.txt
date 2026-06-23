@@ -189,7 +189,7 @@ pydantic==2.13.3
     #   tjabane-agent-krabs
 pydantic-core==2.46.3
     # via pydantic
-pyjwt==2.12.1
+pyjwt==2.13.0
     # via
     #   msal
     #   twilio
