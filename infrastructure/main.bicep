@@ -19,6 +19,24 @@ param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-hellowo
 @description('Configure runtime Key Vault secret references and secret-backed environment variables.')
 param configureRuntimeSecrets bool = false
 
+@description('OpenTelemetry mode: disabled, console, or otlp.')
+param otelMode string = 'otlp'
+
+@description('OpenTelemetry service name.')
+param otelServiceName string = 'mr-krabs'
+
+@description('Optional OTLP endpoint, for example http://otel-collector:4317.')
+param otelExporterOtlpEndpoint string = ''
+
+@description('Additional comma-separated OpenTelemetry resource attributes.')
+param otelResourceAttributes string = ''
+
+@description('OpenTelemetry trace sampler.')
+param otelTracesSampler string = 'parentbased_traceidratio'
+
+@description('OpenTelemetry trace sampler argument.')
+param otelTracesSamplerArg string = '1.0'
+
 var suffix = take(uniqueString(resourceGroup().id), 8)
 var safeAppName = replace(appName, '-', '')
 
@@ -69,6 +87,14 @@ module keyvault 'modules/keyvault.bicep' = {
   }
 }
 
+module monitoring 'modules/monitoring.bicep' = {
+  name: 'monitoring'
+  params: {
+    appName: appName
+    location: location
+  }
+}
+
 module containerApp 'modules/container-app.bicep' = {
   name: 'containerApp'
   params: {
@@ -81,6 +107,13 @@ module containerApp 'modules/container-app.bicep' = {
     emailSenderAddress: communication.outputs.senderAddress
     containerImage: containerImage
     configureRuntimeSecrets: configureRuntimeSecrets
+    appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
+    otelMode: otelMode
+    otelServiceName: otelServiceName
+    otelExporterOtlpEndpoint: otelExporterOtlpEndpoint
+    otelResourceAttributes: otelResourceAttributes
+    otelTracesSampler: otelTracesSampler
+    otelTracesSamplerArg: otelTracesSamplerArg
   }
 }
 
@@ -93,3 +126,5 @@ output containerAppName string = containerApp.outputs.name
 output containerAppsEnvironmentName string = containerApp.outputs.environmentName
 output acrName string = containerApp.outputs.acrName
 output acrLoginServer string = containerApp.outputs.acrLoginServer
+output appInsightsName string = monitoring.outputs.appInsightsName
+output logAnalyticsWorkspaceName string = monitoring.outputs.workspaceName

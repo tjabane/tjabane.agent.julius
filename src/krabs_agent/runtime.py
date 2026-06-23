@@ -7,6 +7,7 @@ from typing import Any, cast
 from openai import OpenAI
 
 from krabs_domain.models.agent import Message
+from krabs_observability.agent import ResponseClient, ToolRunner
 from krabs_tools.registry import ToolRegistry
 
 
@@ -45,8 +46,9 @@ class Agent:
         self.model = model
         self.messages: list[Any] = [{"role": "system", "content": system_prompt}]
         self.messages.extend(_message_to_dict(message) for message in messages or [])
-        self._client = client
+        self._responses = ResponseClient(client, model=model)
         self._tool_registry = tool_registry
+        self._tool_runner = ToolRunner()
 
     def send_message(self, message: str) -> str:
         input_list = [*self.messages, {"role": "user", "content": message}]
@@ -55,14 +57,14 @@ class Agent:
         if tools:
             request["tools"] = tools
 
-        response = self._client.responses.create(**request)
+        response = self._responses.create(**request)
 
         while self._tool_registry and (tool_calls := _function_calls(response)):
             tool_outputs = []
             for tool_call in tool_calls:
                 tool = self._tool_registry.get(tool_call.name)
                 tool_input = tool.input_schema.model_validate_json(tool_call.arguments or "{}")
-                output = _run_async_tool(tool.run(tool_input))
+                output = _run_async_tool(self._tool_runner.run(tool, tool_input))
                 tool_outputs.append(
                     {
                         "type": "function_call_output",
@@ -71,7 +73,7 @@ class Agent:
                     }
                 )
 
-            response = self._client.responses.create(
+            response = self._responses.create(
                 model=self.model,
                 input=tool_outputs,
                 previous_response_id=response.id,

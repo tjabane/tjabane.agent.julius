@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from pydantic import BaseModel, ConfigDict
 
+from krabs_agent import agent_runner
 from krabs_agent.agent_runner import run
 from krabs_agent.runtime import Agent
 from krabs_domain.models.agent import Session
@@ -120,6 +121,24 @@ class TestRun:
 
         assert agent_class.call_args.kwargs["tool_registry"] is not None
 
+    @patch("krabs_agent.agent_runner.AgentRun")
+    @patch("krabs_agent.agent_runner.Agent")
+    def test_runs_agent_turn_through_observed_boundary(self, agent_class, agent_run_class):
+        client = MagicMock()
+        sessions = FakeSessions()
+        agent = MagicMock()
+        agent.send_message.return_value = "Done."
+        agent_class.return_value = agent
+        agent_run = MagicMock()
+        agent_run.run.side_effect = lambda call: call()
+        agent_run_class.return_value = agent_run
+
+        run("+27831234567", "hello", client=client, sessions=sessions)
+
+        agent_run_class.assert_called_once_with(model=agent_runner._MODEL)
+        agent_run.run.assert_called_once()
+        agent.send_message.assert_called_once_with("hello")
+
 
 class TestAgentToolRegistry:
     def test_dispatches_tool_call_then_continues(self):
@@ -171,4 +190,3 @@ class TestAgentToolRegistry:
                 "output": '[{"id": "1", "name": "Cheque"}]',
             }
         ]
-

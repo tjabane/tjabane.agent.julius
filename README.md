@@ -53,6 +53,7 @@ The agent uses OpenAI's Responses API with a `ToolRegistry`. Banking tools live 
 | Database | Azure Cosmos DB |
 | Email | Azure Communication Services |
 | Secrets | Azure Key Vault |
+| Observability | Azure Monitor Application Insights + OpenTelemetry |
 | IaC | Azure Bicep |
 
 ---
@@ -110,6 +111,10 @@ Useful endpoints:
 - `GET /health`
 - `POST /webhook`
 - `POST /api/webhook` legacy alias
+
+### Observability
+
+OpenTelemetry is disabled by default locally. Console and OTLP modes, Azure Container Apps configuration, telemetry privacy rules, and future Langfuse correlation notes are documented in [docs/observability.md](docs/observability.md).
 
 ---
 

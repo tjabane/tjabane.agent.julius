@@ -1,10 +1,11 @@
-from datetime import datetime, timezone
-from pydantic import BaseModel, Field
+from datetime import UTC, datetime
 from typing import Literal
+
+from pydantic import BaseModel, Field
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class Message(BaseModel):

@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Protocol
 
 from openai import OpenAI
 
 from krabs_agent.runtime import Agent
-from krabs_domain.models.agent import Message
+from krabs_domain.models.agent import Message, Session
 from krabs_domain.repositories.agent import SessionRepository
 from krabs_domain.repositories.reporting import ReportRepository
+from krabs_observability.adapters import BankingClient as ObservedBankingClient
+from krabs_observability.agent import AgentRun
 from krabs_services.communication import get_report_sender
 from krabs_services.finance.investec_client import InvestecClient
 from krabs_tools.registry import ToolRegistry
@@ -18,6 +21,12 @@ _SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / "system.md").read_text()
 _MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")
 _sessions: SessionRepository | None = None
 _tool_registry: ToolRegistry | None = None
+
+
+class SessionStore(Protocol):
+    def get_or_create(self, whatsapp_number: str) -> Session: ...
+
+    def save(self, session: Session) -> Session: ...
 
 
 def _get_sessions() -> SessionRepository:
@@ -30,7 +39,7 @@ def _get_sessions() -> SessionRepository:
 def _get_tool_registry() -> ToolRegistry:
     global _tool_registry
     if _tool_registry is None:
-        banking_client = InvestecClient()
+        banking_client = ObservedBankingClient(InvestecClient())
         report_sender = get_report_sender()
         registry = ToolRegistry()
         registry.register_many(create_banking_tools(banking_client))
@@ -45,7 +54,7 @@ def run(
     user_message: str,
     *,
     client: OpenAI | None = None,
-    sessions: SessionRepository | None = None,
+    sessions: SessionStore | None = None,
 ) -> str:
     client = client or OpenAI()
     sessions = sessions or _get_sessions()
@@ -59,9 +68,8 @@ def run(
         tool_registry=_get_tool_registry(),
     )
 
-    reply = agent.send_message(user_message)
+    reply = AgentRun(model=_MODEL).run(lambda: agent.send_message(user_message))
     session.messages.append(Message(role="user", content=user_message))
     session.messages.append(Message(role="assistant", content=reply))
     sessions.save(session)
     return reply
-

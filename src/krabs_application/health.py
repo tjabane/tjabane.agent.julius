@@ -119,10 +119,6 @@ def run_all() -> dict:
             health_check = future_to_check[future]
             results[health_check.name] = future.result().as_dict()
 
-    critical_results = [
-        results[health_check.name]
-        for health_check in CHECKS
-        if health_check.critical
-    ]
+    critical_results = [results[health_check.name] for health_check in CHECKS if health_check.critical]
     overall = "healthy" if all(r["status"] == "healthy" for r in critical_results) else "unhealthy"
     return {"status": overall, "dependencies": results}

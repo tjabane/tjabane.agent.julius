@@ -5,9 +5,7 @@ from azure.communication.email import EmailClient
 
 class AzureEmailService:
     def __init__(self):
-        self._client = EmailClient.from_connection_string(
-            os.environ["AZURE_COMMUNICATION_CONNECTION_STRING"]
-        )
+        self._client = EmailClient.from_connection_string(os.environ["AZURE_COMMUNICATION_CONNECTION_STRING"])
         self._sender = os.environ["EMAIL_SENDER_ADDRESS"]
         self._recipient = os.environ["EMAIL_RECIPIENT_ADDRESS"]
 

@@ -13,7 +13,19 @@ param(
 
     [bool]$InvestecSandbox = $true,
 
-    [string]$ImageTag = "latest"
+    [string]$ImageTag = "latest",
+
+    [string]$OtelMode = "otlp",
+
+    [string]$OtelServiceName = "mr-krabs",
+
+    [string]$OtelExporterOtlpEndpoint = "",
+
+    [string]$OtelResourceAttributes = "",
+
+    [string]$OtelTracesSampler = "parentbased_traceidratio",
+
+    [string]$OtelTracesSamplerArg = "1.0"
 )
 
 Set-StrictMode -Version Latest
@@ -40,7 +52,7 @@ Write-Host "`n[4/8] Deploying Bicep infrastructure..." -ForegroundColor Cyan
 $deployOutput = az deployment group create `
     --resource-group $ResourceGroup `
     --template-file "$PSScriptRoot\main.bicep" `
-    --parameters appName=$AppName location=$Location appEnvironment=$AppEnvironment investecSandbox=$($InvestecSandbox.ToString().ToLower()) deployingUserObjectId=$deployingUserObjectId `
+    --parameters appName=$AppName location=$Location appEnvironment=$AppEnvironment investecSandbox=$($InvestecSandbox.ToString().ToLower()) deployingUserObjectId=$deployingUserObjectId otelMode=$OtelMode otelServiceName=$OtelServiceName otelExporterOtlpEndpoint=$OtelExporterOtlpEndpoint otelResourceAttributes=$OtelResourceAttributes otelTracesSampler=$OtelTracesSampler otelTracesSamplerArg=$OtelTracesSamplerArg `
     --query properties.outputs `
     --output json | ConvertFrom-Json
 
@@ -50,10 +62,14 @@ $acsName          = $deployOutput.acsName.value
 $containerAppUrl  = $deployOutput.containerAppUrl.value
 $acrName          = $deployOutput.acrName.value
 $acrLoginServer   = $deployOutput.acrLoginServer.value
+$appInsightsName  = $deployOutput.appInsightsName.value
+$workspaceName    = $deployOutput.logAnalyticsWorkspaceName.value
 
 Write-Host "    Container App : $containerAppUrl" -ForegroundColor Green
 Write-Host "    ACR           : $acrLoginServer" -ForegroundColor Green
 Write-Host "    Key Vault     : $keyVaultName" -ForegroundColor Green
+Write-Host "    App Insights  : $appInsightsName" -ForegroundColor Green
+Write-Host "    Log Analytics : $workspaceName" -ForegroundColor Green
 
 Write-Host "`n[5/8] Populating Key Vault secrets..." -ForegroundColor Cyan
 $cosmosConn = (az cosmosdb keys list --name $cosmosAccount --resource-group $ResourceGroup --type connection-strings --query "connectionStrings[0].connectionString" -o tsv)
@@ -100,7 +116,7 @@ Write-Host "`n[7/8] Applying runtime secrets and container image..." -Foreground
 $deployOutput = az deployment group create `
     --resource-group $ResourceGroup `
     --template-file "$PSScriptRoot\main.bicep" `
-    --parameters appName=$AppName location=$Location appEnvironment=$AppEnvironment investecSandbox=$($InvestecSandbox.ToString().ToLower()) deployingUserObjectId=$deployingUserObjectId containerImage=$image configureRuntimeSecrets=true `
+    --parameters appName=$AppName location=$Location appEnvironment=$AppEnvironment investecSandbox=$($InvestecSandbox.ToString().ToLower()) deployingUserObjectId=$deployingUserObjectId containerImage=$image configureRuntimeSecrets=true otelMode=$OtelMode otelServiceName=$OtelServiceName otelExporterOtlpEndpoint=$OtelExporterOtlpEndpoint otelResourceAttributes=$OtelResourceAttributes otelTracesSampler=$OtelTracesSampler otelTracesSamplerArg=$OtelTracesSamplerArg `
     --query properties.outputs `
     --output json | ConvertFrom-Json
 

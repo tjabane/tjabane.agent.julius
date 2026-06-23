@@ -1,5 +1,7 @@
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
+
 import pytest
+
 from krabs_services.communication.twilio_client import TwilioClient
 
 
@@ -11,6 +13,7 @@ def twilio_env(monkeypatch):
 
 
 # ── Initialisation ────────────────────────────────────────────────────────────
+
 
 class TestInit:
     @patch("krabs_services.communication.twilio_client.Client")
@@ -25,6 +28,7 @@ class TestInit:
 
 
 # ── send_message ──────────────────────────────────────────────────────────────
+
 
 class TestSendMessage:
     @patch("krabs_services.communication.twilio_client.Client")
@@ -76,6 +80,7 @@ class TestSendMessage:
 
 
 # ── parse_webhook ─────────────────────────────────────────────────────────────
+
 
 class TestParseWebhook:
     def test_extracts_number_and_body(self):

@@ -16,11 +16,15 @@ def dummy_env(monkeypatch, request):
     monkeypatch.setenv("INVESTEC_URL", "https://openapisandbox.investec.com")
     monkeypatch.setenv("INVESTEC_TIMEOUT_SECONDS", "5.0")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    monkeypatch.setenv("COSMOS_CONNECTION_STRING", "AccountEndpoint=https://fake.documents.azure.com:443/;AccountKey=ZmFrZWtleWZha2U=;")
+    monkeypatch.setenv(
+        "COSMOS_CONNECTION_STRING", "AccountEndpoint=https://fake.documents.azure.com:443/;AccountKey=ZmFrZWtleWZha2U=;"
+    )
     monkeypatch.setenv("COSMOS_DATABASE", "krabs")
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "ACtest")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "testtoken")
     monkeypatch.setenv("TWILIO_WHATSAPP_NUMBER", "+15005550006")
-    monkeypatch.setenv("AZURE_COMMUNICATION_CONNECTION_STRING", "endpoint=https://fake.communication.azure.com;accesskey=ZmFrZQ==")
+    monkeypatch.setenv(
+        "AZURE_COMMUNICATION_CONNECTION_STRING", "endpoint=https://fake.communication.azure.com;accesskey=ZmFrZQ=="
+    )
     monkeypatch.setenv("EMAIL_SENDER_ADDRESS", "sender@test.com")
     monkeypatch.setenv("EMAIL_RECIPIENT_ADDRESS", "recipient@test.com")

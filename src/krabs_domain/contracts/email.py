@@ -4,5 +4,4 @@ from typing import Protocol
 
 
 class EmailService(Protocol):
-    def send_report(self, subject: str, body: str) -> None:
-        ...
+    def send_report(self, subject: str, body: str) -> None: ...

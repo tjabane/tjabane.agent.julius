@@ -1,18 +1,17 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
 
-from krabs_domain.repositories.agent import SessionRepository
 from krabs_domain.models.agent import Session
+from krabs_domain.repositories.agent import SessionRepository
 
 
 @pytest.fixture
 def container(mocker):
     mock_client = mocker.patch("krabs_domain.repositories.base.CosmosClient")
     c = MagicMock()
-    mock_client.from_connection_string.return_value \
-        .get_database_client.return_value \
-        .get_container_client.return_value = c
+    mock_client.from_connection_string.return_value.get_database_client.return_value.get_container_client.return_value = c
     return c
 
 
