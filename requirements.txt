@@ -54,7 +54,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
     #   click
     #   tqdm
     #   uvicorn
-cryptography==47.0.0
+cryptography==48.0.1
     # via
     #   azure-identity
     #   msal
