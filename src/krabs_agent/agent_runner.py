@@ -15,7 +15,7 @@ from krabs_observability.agent import AgentRun
 from krabs_services.communication import get_report_sender
 from krabs_services.finance.investec_client import InvestecClient
 from krabs_tools.registry import ToolRegistry
-from krabs_tools.tools import create_banking_tools, create_datetime_tools, create_reporting_tools
+from krabs_tools.tools import create_datetime_tools, create_readonly_banking_tools, create_reporting_tools
 
 _SYSTEM_PROMPT = (Path(__file__).parent / "prompts" / "system.md").read_text()
 _MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")
@@ -42,7 +42,7 @@ def _get_tool_registry() -> ToolRegistry:
         banking_client = ObservedBankingClient(InvestecClient())
         report_sender = get_report_sender()
         registry = ToolRegistry()
-        registry.register_many(create_banking_tools(banking_client))
+        registry.register_many(create_readonly_banking_tools(banking_client))
         registry.register_many(create_datetime_tools())
         registry.register_many(create_reporting_tools(report_sender, ReportRepository))
         _tool_registry = registry

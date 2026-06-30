@@ -11,9 +11,8 @@ Mr Krabs is an AI-powered assistant that lets you interact with your Investec ac
 ### Banking
 - Check account balances and account details
 - View and filter transactions by date range, type, or pending status
-- List beneficiaries and pay them
 - Access documents and statements
-- Transfer funds between accounts
+- Payment and transfer execution is intentionally disabled in the agent runtime
 
 ### Reporting
 - Generate daily and weekly spending scoreboards in WhatsApp

@@ -22,6 +22,7 @@ from krabs_tools.tools import (
     create_banking_payment_tools,
     create_banking_tools,
     create_datetime_tools,
+    create_readonly_banking_tools,
     create_reporting_tools,
 )
 
@@ -149,6 +150,24 @@ def test_create_banking_payment_tools_returns_payment_tools_with_shared_client()
         PayBeneficiariesTool,
     ]
     assert all(tool._banking_client is banking_client for tool in tools)
+
+
+def test_create_readonly_banking_tools_excludes_payment_tools():
+    banking_client = FakeBankingClient()
+
+    tools = create_readonly_banking_tools(banking_client)
+
+    assert [tool.name for tool in tools] == [
+        "get_accounts",
+        "get_balance",
+        "get_bulk_balances",
+        "get_transactions",
+        "get_pending_transactions",
+        "get_documents",
+        "get_document",
+    ]
+    assert "transfer_funds" not in [tool.name for tool in tools]
+    assert "pay_beneficiaries" not in [tool.name for tool in tools]
 
 
 def test_create_banking_tools_combines_all_grouped_factories():

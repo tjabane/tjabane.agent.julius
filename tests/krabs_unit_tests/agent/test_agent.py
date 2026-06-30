@@ -121,6 +121,24 @@ class TestRun:
 
         assert agent_class.call_args.kwargs["tool_registry"] is not None
 
+    @patch("krabs_agent.agent_runner.Agent")
+    def test_agent_registry_excludes_payment_tools(self, agent_class, monkeypatch):
+        client = MagicMock()
+        sessions = FakeSessions()
+        agent = MagicMock()
+        agent.send_message.return_value = "Done."
+        agent_class.return_value = agent
+        monkeypatch.setattr(agent_runner, "_tool_registry", None)
+
+        run("+27831234567", "hello", client=client, sessions=sessions)
+
+        registry = agent_class.call_args.kwargs["tool_registry"]
+        tool_names = [tool["name"] for tool in registry.get_model_tools()]
+        assert "transfer_funds" not in tool_names
+        assert "pay_beneficiaries" not in tool_names
+        assert "get_beneficiaries" not in tool_names
+        assert "get_beneficiary_categories" not in tool_names
+
     @patch("krabs_agent.agent_runner.AgentRun")
     @patch("krabs_agent.agent_runner.Agent")
     def test_runs_agent_turn_through_observed_boundary(self, agent_class, agent_run_class):

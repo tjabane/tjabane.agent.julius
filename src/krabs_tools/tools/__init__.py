@@ -18,6 +18,7 @@ from krabs_tools.tools.factories import (
     create_banking_payment_tools,
     create_banking_tools,
     create_datetime_tools,
+    create_readonly_banking_tools,
     create_reporting_tools,
 )
 from krabs_tools.tools.reporting import SendReportEmailTool
@@ -42,5 +43,6 @@ __all__ = [
     "create_banking_payment_tools",
     "create_banking_tools",
     "create_datetime_tools",
+    "create_readonly_banking_tools",
     "create_reporting_tools",
 ]

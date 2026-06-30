@@ -22,11 +22,11 @@ def _create_agent():
     from krabs_services.communication import get_report_sender
     from krabs_services.finance.investec_client import InvestecClient
     from krabs_tools.registry import ToolRegistry
-    from krabs_tools.tools import create_banking_tools, create_datetime_tools, create_reporting_tools
+    from krabs_tools.tools import create_datetime_tools, create_readonly_banking_tools, create_reporting_tools
 
     banking_client = ObservedBankingClient(InvestecClient())
     tool_registry = ToolRegistry()
-    tool_registry.register_many(create_banking_tools(banking_client))
+    tool_registry.register_many(create_readonly_banking_tools(banking_client))
     tool_registry.register_many(create_datetime_tools())
     tool_registry.register_many(create_reporting_tools(get_report_sender(), ReportRepository))
 

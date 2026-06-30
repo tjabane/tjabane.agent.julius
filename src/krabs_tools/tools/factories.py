@@ -46,10 +46,16 @@ def create_banking_payment_tools(banking_client: BankingClient) -> list[Tool]:
     ]
 
 
-def create_banking_tools(banking_client: BankingClient) -> list[Tool]:
+def create_readonly_banking_tools(banking_client: BankingClient) -> list[Tool]:
     return [
         *create_banking_account_tools(banking_client),
         *create_banking_document_tools(banking_client),
+    ]
+
+
+def create_banking_tools(banking_client: BankingClient) -> list[Tool]:
+    return [
+        *create_readonly_banking_tools(banking_client),
         *create_banking_payment_tools(banking_client),
     ]
 
