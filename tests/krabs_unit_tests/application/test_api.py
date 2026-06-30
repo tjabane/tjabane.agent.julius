@@ -41,6 +41,30 @@ def test_webhook_rejects_missing_twilio_form():
     assert response.status_code == 400
 
 
+def test_webhook_rejects_sender_not_in_allowlist(monkeypatch):
+    sender = StubMessageSender()
+    app.dependency_overrides[get_message_sender] = lambda: sender
+    monkeypatch.setenv("ALLOWED_WHATSAPP_NUMBER", "+27820000000")
+    run_calls = []
+    monkeypatch.setattr(
+        "krabs_application.http_routes.run",
+        lambda whatsapp_number, user_message: run_calls.append((whatsapp_number, user_message)),
+    )
+
+    try:
+        with TestClient(app) as client:
+            response = client.post(
+                "/webhook",
+                data={"From": "whatsapp:+27829876543", "Body": "balance"},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 403
+    assert run_calls == []
+    assert sender.sent_messages == []
+
+
 def test_legacy_api_webhook_alias():
     with TestClient(app) as client:
         response = client.post("/api/webhook", data={})

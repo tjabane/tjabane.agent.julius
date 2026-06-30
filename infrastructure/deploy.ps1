@@ -88,6 +88,7 @@ $manualSecrets = @(
     @{ Name = "twilio-account-sid";       Prompt = "Twilio Account SID" },
     @{ Name = "twilio-auth-token";        Prompt = "Twilio Auth Token" },
     @{ Name = "twilio-whatsapp-number";   Prompt = "Twilio WhatsApp number (e.g. +1415XXXXXXX)" },
+    @{ Name = "allowed-whatsapp-number";  Prompt = "Allowed user WhatsApp number (e.g. +27XXXXXXXXX)" },
     @{ Name = "email-recipient-address";  Prompt = "Your email address (report recipient)" }
 )
 

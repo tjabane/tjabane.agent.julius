@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import time
 from datetime import UTC, datetime
 
@@ -23,6 +24,11 @@ _WEBHOOK_ATTRS = {
     AttributeName.SESSION_ID,
     AttributeName.TURN_ID,
 }
+
+
+def is_allowed_whatsapp_number(number: str) -> bool:
+    allowed_number = os.getenv("ALLOWED_WHATSAPP_NUMBER", "").strip()
+    return not allowed_number or number == allowed_number
 
 
 @router.get("/ping")
@@ -66,6 +72,10 @@ async def webhook(
                 parse_span.set_attribute(AttributeName.SESSION_ID, turn_context.session_id)
         if not number or not message:
             http_status_code = status.HTTP_400_BAD_REQUEST
+            response.status_code = http_status_code
+            return None
+        if not is_allowed_whatsapp_number(number):
+            http_status_code = status.HTTP_403_FORBIDDEN
             response.status_code = http_status_code
             return None
 

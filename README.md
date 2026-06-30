@@ -138,6 +138,10 @@ The legacy alias remains available at:
 https://<container-app-fqdn>/api/webhook
 ```
 
+The deployment prompts for `ALLOWED_WHATSAPP_NUMBER`. Set this to the single
+user WhatsApp number allowed to use the agent, for example `+27XXXXXXXXX`.
+Messages from any other WhatsApp number are rejected before the agent runs.
+
 ---
 
 ## Project Structure

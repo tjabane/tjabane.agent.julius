@@ -150,6 +150,11 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
           identity: userAssignedIdentityId
         }
         {
+          name: 'allowed-whatsapp-number'
+          keyVaultUrl: '${keyVaultBaseUrl}/allowed-whatsapp-number'
+          identity: userAssignedIdentityId
+        }
+        {
           name: 'cosmos-connection-string'
           keyVaultUrl: '${keyVaultBaseUrl}/cosmos-connection-string'
           identity: userAssignedIdentityId
@@ -256,6 +261,10 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'TWILIO_WHATSAPP_NUMBER'
               secretRef: 'twilio-whatsapp-number'
+            }
+            {
+              name: 'ALLOWED_WHATSAPP_NUMBER'
+              secretRef: 'allowed-whatsapp-number'
             }
             {
               name: 'COSMOS_CONNECTION_STRING'
