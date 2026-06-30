@@ -10,20 +10,13 @@ from fastapi import APIRouter, Depends, Request, Response, status
 from krabs_agent.agent_runner import run
 from krabs_application.health import run_all as run_health_checks
 from krabs_observability import create_turn_context_from_env, use_turn_context
-from krabs_observability.semantic import AttributeName, SpanName
-from krabs_observability.telemetry import record_request_metric, trace_operation
+from krabs_observability.telemetry import record_request_metric
 from krabs_services.communication.protocols import MessageSender
 from krabs_services.communication.providers import get_message_sender
 from krabs_services.communication.twilio_client import parse_webhook
 
 router = APIRouter()
 _MESSAGE_SENDER_DEPENDENCY = Depends(get_message_sender)
-_WEBHOOK_ATTRS = {
-    AttributeName.MESSAGING_PROVIDER,
-    AttributeName.OPERATION_NAME,
-    AttributeName.SESSION_ID,
-    AttributeName.TURN_ID,
-}
 
 
 def is_allowed_whatsapp_number(number: str) -> bool:
@@ -56,20 +49,8 @@ async def webhook(
     http_status_code = status.HTTP_200_OK
     try:
         form = await request.form()
-        with trace_operation(
-            SpanName.WEBHOOK_PARSE,
-            attributes={
-                AttributeName.MESSAGING_PROVIDER: "twilio",
-                AttributeName.OPERATION_NAME: "webhook.parse",
-            },
-            allowed_attribute_names=_WEBHOOK_ATTRS,
-            emit_metrics=False,
-        ) as parse_span:
-            number, message = parse_webhook(dict(form))
-            turn_context = create_turn_context_from_env(number) if number else None
-            if turn_context:
-                parse_span.set_attribute(AttributeName.TURN_ID, turn_context.turn_id)
-                parse_span.set_attribute(AttributeName.SESSION_ID, turn_context.session_id)
+        number, message = parse_webhook(dict(form))
+        turn_context = create_turn_context_from_env(number) if number else None
         if not number or not message:
             http_status_code = status.HTTP_400_BAD_REQUEST
             response.status_code = http_status_code
